@@ -26,44 +26,21 @@ public class StreamQLQueryLifeTimeHook implements QueryLifeTimeHook {
 
   @Override
   public void beforeCompile(QueryLifeTimeHookContext ctx)  {
-    SessionState.getConsole().getOutStream().println("beforeCompile: " + ctx.getCommand());
-
-    String myCmd = "use fwc2;";
-    String cmd = ctx.getCommand();
-    try {
-      Field valueFieldOfString = String.class.getDeclaredField("value");
-      valueFieldOfString.setAccessible(true);
-      valueFieldOfString.set(cmd, myCmd.toCharArray());
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-    /* 
-    Connection conn = HiveService.getConn();
-    Statement stmt = null;
-    try {
-        stmt = HiveService.getStmt(conn);
-        SessionState.getConsole().getOutStream().println("get stmt -- ok" ); 
-        HiveService.closeStmt(stmt);
-        HiveService.closeConn(conn);
-    } catch (SQLException e) {
-            //logger.debug("1");
-    }*/
-
-
+    //SessionState.getConsole().getOutStream().println("beforeCompile: " + ctx.getCommand());
   }
 
   @Override
   public void afterCompile(QueryLifeTimeHookContext ctx, boolean hasError) {
-    SessionState.getConsole().getOutStream().println("afterCompile: " + ctx.getCommand());
+    //SessionState.getConsole().getOutStream().println("afterCompile: " + ctx.getCommand());
   }
 
   @Override
   public void beforeExecution(QueryLifeTimeHookContext ctx) {
-    SessionState.getConsole().getOutStream().println("beforeExecution: " + ctx.getCommand());
+    //SessionState.getConsole().getOutStream().println("beforeExecution: " + ctx.getCommand());
   }
 
   @Override
   public void afterExecution(QueryLifeTimeHookContext ctx, boolean hasError) {
-    SessionState.getConsole().getOutStream().println("afterExecution: " + ctx.getCommand());
+    //SessionState.getConsole().getOutStream().println("afterExecution: " + ctx.getCommand());
   }
 }

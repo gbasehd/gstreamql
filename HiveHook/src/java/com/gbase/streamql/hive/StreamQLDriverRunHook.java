@@ -16,28 +16,34 @@
  * limitations under the License.
  */
 
-//package org.apache.hadoop.hive.ql.hooks;
 package com.gbase.streamql.hive;
 
 import org.apache.hadoop.hive.ql.hooks.*;
 import org.apache.hadoop.hive.ql.*;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 
 public class StreamQLDriverRunHook implements HiveDriverRunHook {
 
     //@Override
     public void preDriverRun(HiveDriverRunHookContext hookContext) throws Exception {
 
+        /*
         SessionState.getConsole().getOutStream().println("change "+ hookContext.getCommand());
-
-        String cmd = hookContext.getCommand();
-        String myCmd = "use fwc";
-        Field valueFieldOfString = String.class.getDeclaredField("value");
-        valueFieldOfString.setAccessible(true);
-        valueFieldOfString.set(cmd,myCmd.toCharArray());
-
+        Utility.setCmd(hookContext.getCommand(),"use fwc");
         SessionState.getConsole().getOutStream().println("to " + hookContext.getCommand());
+        */
+
+        StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData("job1");
+        SessionState.getConsole().getOutStream().println("job name "+ jobMetaData.getName());
+        SessionState.getConsole().getOutStream().println("job id "+ jobMetaData.getId());
+        SessionState.getConsole().getOutStream().println("job status "+ jobMetaData.getStatus());
+        SessionState.getConsole().getOutStream().println("job define "+ jobMetaData.getDefine());
     }
 
     //@Override
