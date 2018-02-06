@@ -9,19 +9,11 @@ import org.apache.log4j.Logger;
 
 public class HiveService {
     static Logger logger = Logger.getLogger(HiveService.class);
-    //hive的jdbc驱动类
     public static String dirverName = "org.apache.hive.jdbc.HiveDriver";
-    //连接hive的URL hive1.2.1版本需要的是jdbc:hive2，而不是 jdbc:hive
     public static String url = "jdbc:hive2://192.167.1.223:10000/default";
-    //登录linux的用户名  一般会给权限大一点的用户，否则无法进行事务形操作
     public static String user = "hive";
-    //登录linux的密码
     public static String pass = "hive";
-    /**
-     * 创建连接
-     * @return
-     * @throws SQLException
-     */
+
     public static Connection getConn(){
         Connection conn = null;
         try {
@@ -37,12 +29,6 @@ public class HiveService {
         return conn;
     }
 
-    /**
-     * 创建命令
-     * @param conn
-     * @return
-     * @throws SQLException
-     */
     public static Statement getStmt(Connection conn) throws SQLException{
         logger.debug(conn);
         if(conn == null){
@@ -51,10 +37,6 @@ public class HiveService {
         return conn.createStatement();
     }
 
-    /**
-     * 关闭连接
-     * @param conn
-     */
     public static void closeConn(Connection conn){
         try {
             conn.close();
@@ -64,10 +46,6 @@ public class HiveService {
         }
     }
 
-    /**
-     * 关闭命令
-     * @param stmt
-     */
     public static void closeStmt(Statement stmt){
         try {
             stmt.close();
