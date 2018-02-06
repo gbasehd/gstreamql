@@ -1,0 +1,2 @@
+com\gbase\streamql\hive\StreamQLQueryLifeTimeHook.class
+com\gbase\streamql\hive\StreamQLDriverRunHook.class
