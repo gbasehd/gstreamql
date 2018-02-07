@@ -95,7 +95,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //2.check status
                 if(jobMetaData.getStatus().equals(STATUS_STOPPED)) {
                     //3.exec stremingPro
-                    startStreamJob(STREAM_ENGINE_TYPE, SAVE_TO_HDFS, jobMetaData.getDefine());
+                    startStreamJob(STREAM_ENGINE_TYPE, SAVE_TO_HDFS, jobMetaData.getName(), jobMetaData.getDefine());
                     //4.Update ghd.streamjobmgr set status = 'RUNNING' , id = <jobid> where  name = <streamjob_name>
                     myCmd = "Update " + dbName +".streamjobmgr set status = '" + STATUS_RUNNING + "' , id = "
                             + getStreamPid(jobMetaData.getDefine()) + " where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
@@ -169,7 +169,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         }
     }
 
-    private void startStreamJob(int streamEngineType, int jsonFilePath, String cmdFilePath){
+    private void startStreamJob(int streamEngineType, int jsonFilePath, String streamJobName, String cmdFilePath){
         switch(streamEngineType){
             case STREAM_FLINK_ENGINE :
             {
