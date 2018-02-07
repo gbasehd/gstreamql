@@ -18,7 +18,7 @@ public class Utility {
     public static StreamJobMetaData getStreamJobMetaData(String jobName) throws Exception{
         Connection conn = HiveService.getConn();
         Statement stmt  = HiveService.getStmt(conn);
-        String sql = "select * from fwc.streamjobmgr where name = \"" + jobName +"\"";
+        String sql = "select * from mjw.streamjobmgr where name = \"" + jobName +"\"";
         System.out.println(sql);
         ResultSet res   = stmt.executeQuery(sql);
         ResultSetMetaData meta = res.getMetaData();
