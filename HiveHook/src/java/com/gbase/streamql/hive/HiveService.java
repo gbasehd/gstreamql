@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 public class HiveService {
     static Logger logger = Logger.getLogger(HiveService.class);
     public static String dirverName = "org.apache.hive.jdbc.HiveDriver";
-    public static String url = "jdbc:hive2://192.167.1.223:10000/default";
+    public static String url = "jdbc:hive2://192.167.1.222:10000/default";
     public static String user = "hive";
     public static String pass = "hive";
 
