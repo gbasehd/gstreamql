@@ -32,12 +32,13 @@ import java.util.regex.Pattern;
 public class StreamQLDriverRunHook implements HiveDriverRunHook {
 
     //def cmd type
-    private final int CREATE_STREAMJOB = 0;
+    private final int CREATE_STREAMJOB = 6;
     private final int SHOW_STREAMJOBS = 1;
     private final int START_STREAMJOB = 2;
     private final int STOP_STREAMJOB = 3;
     private final int DROP_STREAMJOB = 4;
     private final int DESCRIBE_STREAMJOB = 5;
+    private final int UNMATCHED = 0;
 
     //def stream job status
     private String STATUS_RUNNING = "RUNNING";
@@ -73,11 +74,17 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         String myCmd = "";
         switch(getCmdType(cmd)) {
             case CREATE_STREAMJOB: {
+                //TODO
+                //check if streamjob name exists
+
                 myCmd = "Insert into " + dbName + ".streamjobmgr values ('" + getCmdParam(STREAM_JOB_NAME) + "',NULL,'STOPPED','" + getCmdParam(STREAM_JOB_DEF) + "')";
                 Utility.setCmd(cmd, myCmd);
                 break;
             }
             case SHOW_STREAMJOBS: {
+                //TODO
+                //check status again
+
                 myCmd = "Select * from " + dbName + ".streamjobmgr";
                 Utility.setCmd(cmd, myCmd);
                 break;
@@ -91,10 +98,10 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                     startStreamJob(STREAM_ENGINE_TYPE, SAVE_TO_HDFS, jobMetaData.getDefine());
                     //4.Update ghd.streamjobmgr set status = 'RUNNING' , id = <jobid> where  name = <streamjob_name>
                     myCmd = "Update " + dbName +".streamjobmgr set status = '" + STATUS_RUNNING + "' , id = "
-                            + getStreamPid(jobMetaData.getDefine()) + " where  name = " + getCmdParam(STREAM_JOB_NAME);
+                            + getStreamPid(jobMetaData.getDefine()) + " where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
                     Utility.setCmd(cmd, myCmd);
                 } else {
-                    //TODO
+                    throw new Exception("Execute error! target stream job is running!");
                 }
                 break;
             }
@@ -106,11 +113,10 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                     //3.Kill streamjob_id
                     stopStreamJob(jobMetaData.getId());
                     //4.Update ghd.streamjobmgr set status = 'STOPPED' , id = <jobid> where  name = <streamjob_name>
-                    myCmd = "Update " + dbName +".streamjobmgr set status = '" + STATUS_STOPPED + "' , id = "
-                            + getStreamPid(jobMetaData.getDefine()) + " where  name = " + getCmdParam(STREAM_JOB_NAME);
+                    myCmd = "Update " + dbName +".streamjobmgr set status = '" + STATUS_STOPPED + "' , id = \"NULL\" where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
                     Utility.setCmd(cmd, myCmd);
                 } else {
-                    //TODO
+                    //do nothing
                 }
                 break;
             }
@@ -120,10 +126,10 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //2.check status
                 if(jobMetaData.getStatus().equals(STATUS_STOPPED)) {
                     //3.Delete from ghd.streamjobmgr where name = <streamjob_name>
-                    myCmd = "Delete from " + dbName +".streamjobmgr where  name = " + getCmdParam(STREAM_JOB_NAME);
+                    myCmd = "Delete from " + dbName +".streamjobmgr where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
                     Utility.setCmd(cmd, myCmd);
                 } else {
-                    //TODO
+                    throw new Exception("Execute error! Unable to delete the running job!");
                 }
                 break;
             }
@@ -132,6 +138,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 Utility.setCmd(cmd, myCmd);
                 break;
             }*/
+            case UNMATCHED:
+                break;
             default:
                 break;
         }
@@ -238,7 +246,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         int cmdType = CREATE_STREAMJOB;
         switch(cmdType) {
             case CREATE_STREAMJOB: {
-                String regExCreateStream = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"jobdef\\\"=\\\")([a-zA-Z0-9]+)(\\\"\\)[ ]*)$";
+                String regExCreateStream = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"jobdef\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\"\\)[ ]*)$";
                 Pattern pattern = Pattern.compile(regExCreateStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if(matcher.matches()) {
@@ -293,7 +301,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 }
             }
             /*case DESCRIBE_STREAMJOB: {
-                String regExDescStream = "^([ ]*describe[ ]+)([a-zA-Z0-9]+)([ ]*)$";
+                String regExDescStream = "^([ ]*describe[ ]+)([a-zA-Z/0-9]+)([ ]*)$";
                 Pattern pattern = Pattern.compile(regExDescStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
@@ -302,8 +310,10 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 } //else //do nothing
             }*/
 
-            default:
+            default: {
+                cmdType = UNMATCHED;
                 break;
+            }
         }
 
         return cmdType;
