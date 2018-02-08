@@ -18,17 +18,19 @@ public class Utility {
     public static StreamJobMetaData getStreamJobMetaData(String jobName) throws Exception{
         Connection conn = HiveService.getConn();
         Statement stmt  = HiveService.getStmt(conn);
-        String sql = "select * from mjw.streamjobmgr where name = \"" + jobName +"\"";
-        System.out.println(sql);
+        String sql = "select name, pid, jobid, status, define from mjw.streamjobmgr where name = \"" + jobName +"\"";
+        //System.out.println(sql);
         ResultSet res   = stmt.executeQuery(sql);
         ResultSetMetaData meta = res.getMetaData();
 
-        StreamJobMetaData jobMeta = new StreamJobMetaData();
+        StreamJobMetaData jobMeta = null;
         while(res.next()) {
+            jobMeta = new StreamJobMetaData();
             jobMeta.setName(res.getString(1));
-            jobMeta.setId(res.getString(2));
-            jobMeta.setStatus(res.getString(3));
-            jobMeta.setDefine(res.getString(4));
+            jobMeta.setPid(res.getString(2));
+            jobMeta.setJobid(res.getString(3));
+            jobMeta.setStatus(res.getString(4));
+            jobMeta.setDefine(res.getString(5));
         }
         HiveService.closeStmt(stmt);
         HiveService.closeConn(conn);
