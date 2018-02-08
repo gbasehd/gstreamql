@@ -107,6 +107,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //1.Select define,status from ghd.streamjobmgr where name = <streamjob_name>
                 StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(getCmdParam(STREAM_JOB_NAME));
                 //2.check status
+                if(jobMetaData == null)
+                    throw new Exception("Start stream job failed! create stream job \"" + getCmdParam(STREAM_JOB_NAME) + "\" first!");
                 if(jobMetaData.getStatus().equals(STATUS_STOPPED)) {
                     //3.exec stremingPro
                     startStreamJob(STREAM_ENGINE_TYPE, SAVE_TO_HDFS, jobMetaData);
@@ -125,6 +127,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //1.Select id,status from ghd.streamjobmgr where name = <streamjob_name>
                 StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(getCmdParam(STREAM_JOB_NAME));
                 //2.check status
+                if(jobMetaData == null)
+                    throw new Exception("Stop stream job failed! create stream job \"" + getCmdParam(STREAM_JOB_NAME) + "\" first!");
                 if(jobMetaData.getStatus().equals(STATUS_RUNNING)) {
                     //3.Kill streamjob_id
                     stopStreamJob(jobMetaData);
@@ -141,6 +145,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //1.Select status from ghd.streamjobmgr where name = <streamjob_name>
                 StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(getCmdParam(STREAM_JOB_NAME));
                 //2.check status
+                if(jobMetaData == null)
+                    throw new Exception("Drop stream job failed! create stream job \"" + getCmdParam(STREAM_JOB_NAME) + "\" first!");
                 if(jobMetaData.getStatus().equals(STATUS_STOPPED)) {
                     //3.Delete from ghd.streamjobmgr where name = <streamjob_name>
                     myCmd = "Delete from " + dbName +".streamjobmgr where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
