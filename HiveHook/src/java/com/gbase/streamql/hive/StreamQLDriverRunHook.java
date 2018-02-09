@@ -26,6 +26,7 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +41,14 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     private final int DESCRIBE_STREAMJOB = 5;
     private final int UNMATCHED = 0;
 
+    //def match pattern
+    private String PATTERN_CREATE_STREAMJOB = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"jobdef\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\"\\)[ ]*)$";
+    private String PATTERN_SHOW_STREAMJOBS = "^[ ]*SHOW[ ]+STREAMJOBS[ ]*$";
+    private String PATTERN_START_STREAMJOB = "(^[ ]*start[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
+    private String PATTERN_STOP_STREAMJOB = "(^[ ]*stop[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
+    private String PATTERN_DROP_STREAMJOB = "(^[ ]*drop[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
+    private String PATTERN_DESCRIBE_STREAMJOB = "^([ ]*describe[ ]+)([a-zA-Z/0-9]+)([ ]*)$";
+
     //def stream job status
     private String STATUS_RUNNING = "RUNNING";
     private String STATUS_STOPPED = "STOPPED";
@@ -49,8 +58,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     private int STREAM_ENGINE_TYPE = STREAM_FLINK_ENGINE;
 
     //def json file path: hdfs; local file
-    private static final int SAVE_TO_FILE = 0;
-    private static final int SAVE_TO_HDFS = 1;
+    private final int SAVE_TO_FILE = 0;
+    private final int SAVE_TO_HDFS = 1;
 
     //def cmd params
     private String STREAM_JOB_NAME = "streamJobName";
@@ -63,21 +72,26 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     private String dbName = "mjw";
     private String jsonFileDir = "/home/mjw";
 
+    private boolean IS_DEBUG = false;
+
+    private int MIN_WAITS_SECOND_INTERVAL = 1;
+    private final int MAX_TRY_TIMES = 50;
+
     //@Override
     public void preDriverRun(HiveDriverRunHookContext hookContext) throws Exception {
 
-        SessionState.getConsole().getOutStream().println("change "+ hookContext.getCommand());
+        Logger("change "+ hookContext.getCommand());
         String cmd = hookContext.getCommand();
-
-
-
         String myCmd = "";
         switch(getCmdType(cmd)) {
             case CREATE_STREAMJOB: {
-                //TODO
                 //check if streamjob name exists
-
-                myCmd = "Insert into " + dbName + ".streamjobmgr values ('" + getCmdParam(STREAM_JOB_NAME) + "',NULL,'STOPPED','" + getCmdParam(STREAM_JOB_DEF) + "')";
+                StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(getCmdParam(STREAM_JOB_NAME));
+                if(jobMetaData != null && jobMetaData.getName().equals(getCmdParam(STREAM_JOB_NAME))) {
+                    throw  new Exception("Create stream job error! Stream job name \"" + getCmdParam(STREAM_JOB_NAME) + "\" exists!");
+                }
+                //insert data
+                myCmd = "Insert into " + dbName + ".streamjobmgr(name, pid, jobid, status, define) values ('" + getCmdParam(STREAM_JOB_NAME) + "',NULL,NULL,'STOPPED','" + getCmdParam(STREAM_JOB_DEF) + "')";
                 Utility.setCmd(cmd, myCmd);
                 break;
             }
@@ -85,7 +99,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //TODO
                 //check status again
 
-                myCmd = "Select * from " + dbName + ".streamjobmgr";
+                myCmd = "Select name, jobid, status, define from " + dbName + ".streamjobmgr";
                 Utility.setCmd(cmd, myCmd);
                 break;
             }
@@ -93,12 +107,16 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //1.Select define,status from ghd.streamjobmgr where name = <streamjob_name>
                 StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(getCmdParam(STREAM_JOB_NAME));
                 //2.check status
+                if(jobMetaData == null)
+                    throw new Exception("Start stream job failed! create stream job \"" + getCmdParam(STREAM_JOB_NAME) + "\" first!");
                 if(jobMetaData.getStatus().equals(STATUS_STOPPED)) {
                     //3.exec stremingPro
-                    startStreamJob(STREAM_ENGINE_TYPE, SAVE_TO_HDFS, jobMetaData.getDefine());
+                    startStreamJob(STREAM_ENGINE_TYPE, SAVE_TO_HDFS, jobMetaData);
                     //4.Update ghd.streamjobmgr set status = 'RUNNING' , id = <jobid> where  name = <streamjob_name>
-                    myCmd = "Update " + dbName +".streamjobmgr set status = '" + STATUS_RUNNING + "' , id = "
-                            + getStreamPid(jobMetaData.getDefine()) + " where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
+                    myCmd = "Update " + dbName +".streamjobmgr set status = '" + STATUS_RUNNING +
+                            "' , pid = \"" + getStreamPid(jobMetaData.getDefine()) +
+                            "\", jobid = \"" + getStreamJobId(getCmdParam(STREAM_JOB_NAME)) +
+                            "\" where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
                     Utility.setCmd(cmd, myCmd);
                 } else {
                     throw new Exception("Execute error! target stream job is running!");
@@ -109,11 +127,14 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //1.Select id,status from ghd.streamjobmgr where name = <streamjob_name>
                 StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(getCmdParam(STREAM_JOB_NAME));
                 //2.check status
+                if(jobMetaData == null)
+                    throw new Exception("Stop stream job failed! create stream job \"" + getCmdParam(STREAM_JOB_NAME) + "\" first!");
                 if(jobMetaData.getStatus().equals(STATUS_RUNNING)) {
                     //3.Kill streamjob_id
-                    stopStreamJob(jobMetaData.getId());
+                    stopStreamJob(jobMetaData);
                     //4.Update ghd.streamjobmgr set status = 'STOPPED' , id = <jobid> where  name = <streamjob_name>
-                    myCmd = "Update " + dbName +".streamjobmgr set status = '" + STATUS_STOPPED + "' , id = \"NULL\" where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
+                    myCmd = "Update " + dbName +".streamjobmgr set status = '" + STATUS_STOPPED +
+                            "' , pid = \"NULL\", jobid = \"NULL\" where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
                     Utility.setCmd(cmd, myCmd);
                 } else {
                     //do nothing
@@ -124,6 +145,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //1.Select status from ghd.streamjobmgr where name = <streamjob_name>
                 StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(getCmdParam(STREAM_JOB_NAME));
                 //2.check status
+                if(jobMetaData == null)
+                    throw new Exception("Drop stream job failed! create stream job \"" + getCmdParam(STREAM_JOB_NAME) + "\" first!");
                 if(jobMetaData.getStatus().equals(STATUS_STOPPED)) {
                     //3.Delete from ghd.streamjobmgr where name = <streamjob_name>
                     myCmd = "Delete from " + dbName +".streamjobmgr where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
@@ -144,60 +167,34 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 break;
         }
 
-
-
-        SessionState.getConsole().getOutStream().println("to " + hookContext.getCommand());
+        Logger("to " + hookContext.getCommand());
     }
 
-    private void stopStreamJob(String id) {
-        //generate cmd
-        String[] stringCmds = new String[]{"kill", "-9", id};
+    private void stopStreamJob(StreamJobMetaData jobMetaData) throws Exception {
+        //*********** cancle  jobflink
+        Process canclePro = Runtime.getRuntime().exec(new String[]{"sh", jsonFileDir + "/flink-cancel-job.sh", jobMetaData.getJobid()});
+        canclePro.waitFor();
 
-        //exec cmd
-        OutputStream out = null;
-        try {
-            Process pro = Runtime.getRuntime().exec(stringCmds);
-            pro.waitFor();
-            out = pro.getOutputStream();
-            String result = "";
-            OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
-            writer.write(result);
-            System.out.print("\n&&&stopProgress INFO:"+result);
-            out.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        //*********** kill pid
+        Process killPro = Runtime.getRuntime().exec(new String[]{"kill", "-9", jobMetaData.getPid()});
+        killPro.waitFor();
     }
 
-    private void startStreamJob(int streamEngineType, int jsonFilePath, String cmdFilePath){
+    private void startStreamJob(int streamEngineType, int jsonFilePath, StreamJobMetaData jobMetaData) throws Exception {
         switch(streamEngineType){
             case STREAM_FLINK_ENGINE :
             {
-                //generate cmd
-                String[] stringCmds = new String[]{};
                 switch(jsonFilePath) {
                     case SAVE_TO_HDFS:
-                        stringCmds = new String[]{"sh", jsonFileDir + "/flink-startup.sh", cmdFilePath};
+                        //exec cmd
+                        Process pro = Runtime.getRuntime().exec(
+                                new String[]{"sh", jsonFileDir + "/flink-startup.sh", jobMetaData.getName(), jobMetaData.getDefine()});
+                        pro.waitFor();
                         break;
                     case SAVE_TO_FILE:
                         break;
                     default:
                         break;
-                }
-                System.out.print("\n&&&startupProgress cmd:" + stringCmds.toString());
-                //exec cmd
-                OutputStream out = null;
-                try {
-                    Process pro = Runtime.getRuntime().exec(stringCmds);
-                    pro.waitFor();
-                    out = pro.getOutputStream();
-                    String result = "";
-                    OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
-                    writer.write(result);
-                    System.out.print("\n&&&startupProgress INFO:"+result);
-                    out.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
                 break;
             }
@@ -207,34 +204,64 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
 
     }
 
-    private String getStreamPid(String jsonFilePath) {
-        OutputStream out = null;
+    private String getStreamJobId(String streamJobName) throws Exception {
+        String jobId = "";
+        boolean getStreamIdSuccess = true;
+        int tryTimes = 0;
+        do {
+            ProcessBuilder processBuilder = new ProcessBuilder("python", jsonFileDir + "/flink-get-running-jid.py", streamJobName);
+            Process progress = null;
+            progress = processBuilder.start();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(progress.getInputStream()));
+            jobId = bufferedReader.readLine();
+            if(jobId.equals("None"))
+                getStreamIdSuccess = false;
+            else
+                getStreamIdSuccess = true;
+            sleepForASecond();
+            tryTimes ++;
+        }while(!getStreamIdSuccess && isTimeOut(tryTimes));
+
+        return jobId;
+    }
+
+    // tmp code
+    private String getStreamPid(String jsonFilePath) throws InterruptedException {
+
+		OutputStream out = null;
         String tmpFilePath = jsonFileDir + "/tmpStreamPid.txt" + System.currentTimeMillis();
         String result = "";
-        String line = "";
+        String pid = "";
 
         boolean getStreamIdSuccess = true;
+        int tryTimes = 0;
         do {
             try {
                 getStreamIdSuccess = true;
                 Process pro = Runtime.getRuntime().exec(new String[]{"sudo", "sh", jsonFileDir + "/getStreamPid.sh", jsonFilePath, tmpFilePath});
                 pro.waitFor();
-                out = pro.getOutputStream();
-                OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
-                writer.write(result);
-                System.out.print("\n&&&getStreamPid INFO:"+result);
-                out.close();
 
                 File pidFile = new File(tmpFilePath);
                 InputStreamReader reader = new InputStreamReader(new FileInputStream(pidFile));
                 BufferedReader buffer = new BufferedReader(reader);
 
-                line = buffer.readLine();
-                System.out.print("\n&&&getStreamPid streamPid:" + line + "\n");
-            } catch (Exception e) { getStreamIdSuccess = false; }
-        }while(!getStreamIdSuccess);
+                pid = buffer.readLine();
+                Logger("\n&&&getStreamPid streamPid:" + pid + "\n");
 
-        return line;
+                sleepForASecond();
+                tryTimes ++;
+            } catch (Exception e) { getStreamIdSuccess = false; }
+        }while(!getStreamIdSuccess && isTimeOut(tryTimes));
+
+        return pid;
+    }
+
+    private void sleepForASecond() throws InterruptedException {
+        TimeUnit.SECONDS.sleep(MIN_WAITS_SECOND_INTERVAL);
+    }
+
+    private boolean isTimeOut(int tryTimes) {
+        return tryTimes < MAX_TRY_TIMES;
     }
 
     private String getCmdParam(String keyName) {
@@ -246,7 +273,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         int cmdType = CREATE_STREAMJOB;
         switch(cmdType) {
             case CREATE_STREAMJOB: {
-                String regExCreateStream = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"jobdef\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\"\\)[ ]*)$";
+                String regExCreateStream = PATTERN_CREATE_STREAMJOB;
                 Pattern pattern = Pattern.compile(regExCreateStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if(matcher.matches()) {
@@ -258,7 +285,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 }
             }
             case SHOW_STREAMJOBS: {
-                String regExShowStream = "^[ ]*SHOW[ ]+STREAMJOBS[ ]*$";
+                String regExShowStream = PATTERN_SHOW_STREAMJOBS;
                 Pattern pattern = Pattern.compile(regExShowStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
@@ -268,7 +295,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 }
             }
             case START_STREAMJOB: {
-                String regExStartStream = "(^[ ]*start[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
+                String regExStartStream = PATTERN_START_STREAMJOB;
                 Pattern pattern = Pattern.compile(regExStartStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
@@ -279,7 +306,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 }
             }
             case STOP_STREAMJOB: {
-                String regExStopStream = "(^[ ]*stop[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
+                String regExStopStream = PATTERN_STOP_STREAMJOB;
                 Pattern pattern = Pattern.compile(regExStopStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
@@ -290,7 +317,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 }
             }
             case DROP_STREAMJOB:{
-                String regExDropStream = "(^[ ]*drop[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
+                String regExDropStream = PATTERN_DROP_STREAMJOB;
                 Pattern pattern = Pattern.compile(regExDropStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
@@ -301,7 +328,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 }
             }
             /*case DESCRIBE_STREAMJOB: {
-                String regExDescStream = "^([ ]*describe[ ]+)([a-zA-Z/0-9]+)([ ]*)$";
+                String regExDescStream = PATTERN_DESCRIBE_STREAMJOB;
                 Pattern pattern = Pattern.compile(regExDescStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
@@ -322,6 +349,11 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     //@Override
     public void postDriverRun(HiveDriverRunHookContext hookContext) throws Exception {
         // do nothing
+    }
+
+    private void Logger(String output) {
+        if(IS_DEBUG)
+            System.out.print(output);
     }
 
 }

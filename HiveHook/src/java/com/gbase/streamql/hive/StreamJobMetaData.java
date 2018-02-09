@@ -2,16 +2,15 @@ package com.gbase.streamql.hive;
 
 public class StreamJobMetaData {
     private String name;
-    private String id;
+    private String pid;
+    private String jobid;
     private String status;
     private String define;
 
     public String getName(){
         return this.name;
     }
-    public String getId(){
-        return this.id;
-    }
+
     public String getStatus(){
         return this.status;
     }
@@ -21,13 +20,27 @@ public class StreamJobMetaData {
     public void setName(String name){
         this.name = name;
     }
-    public void setId(String id){
-        this.id = id;
-    }
+
     public void setStatus(String status){
         this.status = status;
     }
     public void setDefine(String define){
         this.define = define;
+    }
+
+    public String getJobid() {
+        return jobid;
+    }
+
+    public void setJobid(String jobid) {
+        this.jobid = jobid;
+    }
+
+    public String getPid() {
+        return pid;
+    }
+
+    public void setPid(String pid) {
+        this.pid = pid;
     }
 }
