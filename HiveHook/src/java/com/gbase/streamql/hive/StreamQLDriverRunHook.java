@@ -68,15 +68,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     //store cmd params
     private Map<String, String> mapCmdParams = new HashMap<String, String>();
 
-    //tmp param
-    private String dbName = "mjw";
-    private String jsonFileDir = "/home/mjw";
-
-    private boolean IS_DEBUG = false;
-
-    private int MIN_WAITS_SECOND_INTERVAL = 1;
-    private final int MAX_TRY_TIMES = 50;
-
+    private StreamQLConf conf = new StreamQLConf();
     //@Override
     public void preDriverRun(HiveDriverRunHookContext hookContext) throws Exception {
 
@@ -91,7 +83,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                     throw  new Exception("Create stream job error! Stream job name \"" + getCmdParam(STREAM_JOB_NAME) + "\" exists!");
                 }
                 //insert data
-                myCmd = "Insert into " + dbName + ".streamjobmgr(name, pid, jobid, status, define) values ('" + getCmdParam(STREAM_JOB_NAME) + "',NULL,NULL,'STOPPED','" + getCmdParam(STREAM_JOB_DEF) + "')";
+                myCmd = "Insert into " + conf.getDbName() + ".streamjobmgr(name, pid, jobid, status, define) values ('" + getCmdParam(STREAM_JOB_NAME) + "',NULL,NULL,'STOPPED','" + getCmdParam(STREAM_JOB_DEF) + "')";
                 Utility.setCmd(cmd, myCmd);
                 break;
             }
@@ -99,7 +91,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //TODO
                 //check status again
 
-                myCmd = "Select name, jobid, status, define from " + dbName + ".streamjobmgr";
+                myCmd = "Select name, jobid, status, define from " + conf.getDbName() + ".streamjobmgr";
                 Utility.setCmd(cmd, myCmd);
                 break;
             }
@@ -113,7 +105,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                     //3.exec stremingPro
                     startStreamJob(STREAM_ENGINE_TYPE, SAVE_TO_HDFS, jobMetaData);
                     //4.Update ghd.streamjobmgr set status = 'RUNNING' , id = <jobid> where  name = <streamjob_name>
-                    myCmd = "Update " + dbName +".streamjobmgr set status = '" + STATUS_RUNNING +
+                    myCmd = "Update " + conf.getDbName() +".streamjobmgr set status = '" + STATUS_RUNNING +
                             "' , pid = \"" + getStreamPid(jobMetaData.getDefine()) +
                             "\", jobid = \"" + getStreamJobId(getCmdParam(STREAM_JOB_NAME)) +
                             "\" where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
@@ -133,7 +125,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                     //3.Kill streamjob_id
                     stopStreamJob(jobMetaData);
                     //4.Update ghd.streamjobmgr set status = 'STOPPED' , id = <jobid> where  name = <streamjob_name>
-                    myCmd = "Update " + dbName +".streamjobmgr set status = '" + STATUS_STOPPED +
+                    myCmd = "Update " + conf.getDbName() +".streamjobmgr set status = '" + STATUS_STOPPED +
                             "' , pid = \"NULL\", jobid = \"NULL\" where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
                     Utility.setCmd(cmd, myCmd);
                 } else {
@@ -149,7 +141,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                     throw new Exception("Drop stream job failed! create stream job \"" + getCmdParam(STREAM_JOB_NAME) + "\" first!");
                 if(jobMetaData.getStatus().equals(STATUS_STOPPED)) {
                     //3.Delete from ghd.streamjobmgr where name = <streamjob_name>
-                    myCmd = "Delete from " + dbName +".streamjobmgr where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
+                    myCmd = "Delete from " + conf.getDbName() +".streamjobmgr where  name = \"" + getCmdParam(STREAM_JOB_NAME) + "\"";
                     Utility.setCmd(cmd, myCmd);
                 } else {
                     throw new Exception("Execute error! Unable to delete the running job!");
@@ -172,7 +164,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
 
     private void stopStreamJob(StreamJobMetaData jobMetaData) throws Exception {
         //*********** cancle  jobflink
-        Process canclePro = Runtime.getRuntime().exec(new String[]{"sh", jsonFileDir + "/flink-cancel-job.sh", jobMetaData.getJobid()});
+        Process canclePro = Runtime.getRuntime().exec(new String[]{"sh", conf.getJsonFileDir() + "/flink-cancel-job.sh", jobMetaData.getJobid()});
         canclePro.waitFor();
 
         //*********** kill pid
@@ -188,7 +180,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                     case SAVE_TO_HDFS:
                         //exec cmd
                         Process pro = Runtime.getRuntime().exec(
-                                new String[]{"sh", jsonFileDir + "/flink-startup.sh", jobMetaData.getName(), jobMetaData.getDefine()});
+                                new String[]{"sh", conf.getJsonFileDir() + "/flink-startup.sh", jobMetaData.getName(), jobMetaData.getDefine()});
                         pro.waitFor();
                         break;
                     case SAVE_TO_FILE:
@@ -209,7 +201,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         boolean getStreamIdSuccess = true;
         int tryTimes = 0;
         do {
-            ProcessBuilder processBuilder = new ProcessBuilder("python", jsonFileDir + "/flink-get-running-jid.py", streamJobName);
+            ProcessBuilder processBuilder = new ProcessBuilder("python", conf.getJsonFileDir() + "/flink-get-running-jid.py", streamJobName);
             Process progress = null;
             progress = processBuilder.start();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(progress.getInputStream()));
@@ -229,7 +221,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     private String getStreamPid(String jsonFilePath) throws InterruptedException {
 
 		OutputStream out = null;
-        String tmpFilePath = jsonFileDir + "/tmpStreamPid.txt" + System.currentTimeMillis();
+        String tmpFilePath = conf.getJsonFileDir() + "/tmpStreamPid.txt" + System.currentTimeMillis();
         String result = "";
         String pid = "";
 
@@ -238,7 +230,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         do {
             try {
                 getStreamIdSuccess = true;
-                Process pro = Runtime.getRuntime().exec(new String[]{"sudo", "sh", jsonFileDir + "/getStreamPid.sh", jsonFilePath, tmpFilePath});
+                Process pro = Runtime.getRuntime().exec(new String[]{"sudo", "sh", conf.getJsonFileDir() + "/getStreamPid.sh", jsonFilePath, tmpFilePath});
                 pro.waitFor();
 
                 File pidFile = new File(tmpFilePath);
@@ -257,11 +249,11 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     }
 
     private void sleepForASecond() throws InterruptedException {
-        TimeUnit.SECONDS.sleep(MIN_WAITS_SECOND_INTERVAL);
+        TimeUnit.SECONDS.sleep(conf.getMinWaitsSecondInterval());
     }
 
     private boolean isTimeOut(int tryTimes) {
-        return tryTimes < MAX_TRY_TIMES;
+        return tryTimes < conf.getMaxTryTimes();
     }
 
     private String getCmdParam(String keyName) {
@@ -352,7 +344,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     }
 
     private void Logger(String output) {
-        if(IS_DEBUG)
+        if(conf.isDebug())
             System.out.print(output);
     }
 
