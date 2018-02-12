@@ -25,13 +25,8 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 public class StreamQLDriverRunHook implements HiveDriverRunHook {
 
     StreamQLConf conf = new StreamQLConf();
-    //@Override
-    public void preDriverRun(HiveDriverRunHookContext hookContext) throws Exception {
 
-        Logger("change "+ hookContext.getCommand());
-        String cmd = hookContext.getCommand();
-        StreamQLParser parser = new StreamQLParser(cmd);
-        StreamJob job = new StreamJob(conf);
+    private void realRun(String cmd, StreamQLParser parser, StreamJob job) throws Exception {
         String myCmd = "";
         switch(parser.getCmdType()) {
             case CREATE_STREAMJOB: {
@@ -116,7 +111,17 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
             default:
                 break;
         }
+    }
 
+    //@Override
+    public void preDriverRun(HiveDriverRunHookContext hookContext) throws Exception {
+
+        String cmd = hookContext.getCommand();
+        StreamQLParser parser = new StreamQLParser(cmd);
+        StreamJob job = new StreamJob(conf);
+
+        Logger("change "+ hookContext.getCommand());
+        realRun(cmd,parser,job);
         Logger("to " + hookContext.getCommand());
     }
 
