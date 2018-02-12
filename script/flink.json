@@ -10,27 +10,17 @@
         "params": [
           {
             "format": "kafka",
-	        "bootstrap.servers": "s1:6667,s2:6667,s3:6667",
+	          "bootstrap.servers": "c1:6667,c2:6667,c3:6667",
             "topics": "yyj-input",			
             "outputTable": "test"
           }
         ]
       },
-      /*{
-        "name": "flink.sources",
-        "params": [
-          {
-            "format": "socket",
-            "port": "9001",
-            "outputTable": "test"
-          }
-        ]
-      },*/
       {
         "name": "flink.sql",
         "params": [
           {
-            "sql": "select * from test where f0 like 'f%'",
+            "sql": "select * from test ",
             "outputTableName": "finalOutputTable"
           }
         ]
@@ -42,32 +32,11 @@
             "name":"jack",
             "format": "kafka",
             "topic" : "yyj-output",
-            "bootstrap.servers": "s1:6667,s2:6667,s3:6667",
+            "bootstrap.servers": "c1:6667,c2:6667,c3:6667",
             "inputTableName": "finalOutputTable"
           }
         ]
       }
-      /*{
-        "name": "flink.outputs",
-        "params": [
-          {
-            "name":"jack",
-            "format": "csv",
-            "path":"file:///opt/streamingpro/output",
-            "inputTableName": "finalOutputTable"
-          }
-        ]
-      }*/
-      /*{
-        "name": "flink.outputs",
-        "params": [
-          {
-            "name":"jack",
-            "format": "console",
-            "inputTableName": "finalOutputTable"
-          }
-        ]
-      }*/
     ],
     "configParams": {
     }

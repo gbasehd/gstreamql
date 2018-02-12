@@ -54,7 +54,7 @@ public class StreamJob {
             progress = processBuilder.start();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(progress.getInputStream()));
             jobId = bufferedReader.readLine();
-            if(jobId.equals("None"))
+            if(jobId == null || jobId.equals("None"))
                 getStreamIdSuccess = false;
             else
                 getStreamIdSuccess = true;

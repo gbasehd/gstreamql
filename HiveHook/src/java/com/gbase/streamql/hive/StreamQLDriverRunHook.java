@@ -59,11 +59,11 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //2.check status
                 if(jobMetaData == null)
                     throw new Exception("Start stream job failed! create stream job \"" + parser.getStreamJobName() + "\" first!");
-                if(jobMetaData.getStatus().equals(STATUS.STOPPED)) {
+                if(jobMetaData.getStatus().equals(STATUS.STOPPED.toString())) {
                     //3.exec stremingPro
                     job.startStreamJob(ENGINE.FLINK, FS.HDFS, jobMetaData);
                     //4.Update ghd.streamjobmgr set status = 'RUNNING' , id = <jobid> where  name = <streamjob_name>
-                    myCmd = "Update " + conf.getDbName() +".streamjobmgr set status = '" + STATUS.RUNNING +
+                    myCmd = "Update " + conf.getDbName() +".streamjobmgr set status = '" + STATUS.RUNNING.toString() +
                             "' , pid = \"" + job.getStreamPid(jobMetaData.getDefine()) +
                             "\", jobid = \"" + job.getStreamJobId(parser.getStreamJobName()) +
                             "\" where  name = \"" + parser.getStreamJobName() + "\"";
@@ -79,11 +79,11 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //2.check status
                 if(jobMetaData == null)
                     throw new Exception("Stop stream job failed! create stream job \"" + parser.getStreamJobName() + "\" first!");
-                if(jobMetaData.getStatus().equals(STATUS.RUNNING)) {
+                if(jobMetaData.getStatus().equals(STATUS.RUNNING.toString())) {
                     //3.Kill streamjob_id
                     job.stopStreamJob(jobMetaData);
                     //4.Update ghd.streamjobmgr set status = 'STOPPED' , id = <jobid> where  name = <streamjob_name>
-                    myCmd = "Update " + conf.getDbName() +".streamjobmgr set status = '" + STATUS.STOPPED +
+                    myCmd = "Update " + conf.getDbName() +".streamjobmgr set status = '" + STATUS.STOPPED.toString() +
                             "' , pid = \"NULL\", jobid = \"NULL\" where  name = \"" + parser.getStreamJobName() + "\"";
                     Utility.setCmd(cmd, myCmd);
                 } else {
@@ -97,7 +97,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
                 //2.check status
                 if(jobMetaData == null)
                     throw new Exception("Drop stream job failed! create stream job \"" + parser.getStreamJobName() + "\" first!");
-                if(jobMetaData.getStatus().equals(STATUS.STOPPED)) {
+                if(jobMetaData.getStatus().equals(STATUS.STOPPED.toString())) {
                     //3.Delete from ghd.streamjobmgr where name = <streamjob_name>
                     myCmd = "Delete from " + conf.getDbName() +".streamjobmgr where  name = \"" + parser.getStreamJobName() + "\"";
                     Utility.setCmd(cmd, myCmd);
@@ -126,10 +126,10 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     }
 
 
-    /*
+
     private void Logger(String output) {
         if(conf.isDebug())
             System.out.print(output);
-    }*/
+    }
 
 }

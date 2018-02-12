@@ -7,7 +7,7 @@ public class StreamQLConf {
     private int MIN_WAITS_SECOND_INTERVAL = 1;
     private int MAX_TRY_TIMES = 50;
     private String driverName = "org.apache.hive.jdbc.HiveDriver";
-    private String url = "jdbc:hive2://192.167.1.222:10000/default";
+    private String url = "jdbc:hive2://192.167.1.225:10000/default";
     private String user = "hive";
     private String pass = "hive";
 
