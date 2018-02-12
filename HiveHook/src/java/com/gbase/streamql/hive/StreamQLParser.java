@@ -14,6 +14,7 @@ public class StreamQLParser {
     private String PATTERN_DESCRIBE_STREAMJOB = "^([ ]*describe[ ]+)([a-zA-Z/0-9]+)([ ]*)$";
     private String STREAM_JOB_NAME = "streamJobName";
     private String STREAM_JOB_DEF = "streamJobDef";
+    private String STREAM_CMD_TYPE = "streamCmdType";
     private Map<String, String> mapCmdParams = new HashMap<String, String>();
     private String cmd;
 
@@ -21,8 +22,8 @@ public class StreamQLParser {
         this.cmd = cmd;
     }
 
-    public CMD getCmdType() {
-    //init cmd type
+    public void parse() {
+        //init cmd type
         CMD cmdType = CMD.CREATE_STREAMJOB;
         switch(cmdType) {
             case CREATE_STREAMJOB: {
@@ -32,6 +33,7 @@ public class StreamQLParser {
                 if(matcher.matches()) {
                     mapCmdParams.put(STREAM_JOB_NAME, matcher.group(2));
                     mapCmdParams.put(STREAM_JOB_DEF, matcher.group(4));
+                    mapCmdParams.put(STREAM_CMD_TYPE, cmdType.toString());
                     break;
                 } else {
                     cmdType = CMD.SHOW_STREAMJOBS;
@@ -42,6 +44,7 @@ public class StreamQLParser {
                 Pattern pattern = Pattern.compile(regExShowStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
+                    mapCmdParams.put(STREAM_CMD_TYPE, cmdType.toString());
                     break;
                 } else {
                     cmdType = CMD.START_STREAMJOB;
@@ -53,6 +56,7 @@ public class StreamQLParser {
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
                     mapCmdParams.put(STREAM_JOB_NAME, matcher.group(2));
+                    mapCmdParams.put(STREAM_CMD_TYPE, cmdType.toString());
                     break;
                 } else {
                     cmdType = CMD.STOP_STREAMJOB;
@@ -64,6 +68,7 @@ public class StreamQLParser {
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
                     mapCmdParams.put(STREAM_JOB_NAME, matcher.group(2));
+                    mapCmdParams.put(STREAM_CMD_TYPE, cmdType.toString());
                     break;
                 } else {
                     cmdType = CMD.DROP_STREAMJOB;
@@ -75,6 +80,7 @@ public class StreamQLParser {
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
                     mapCmdParams.put(STREAM_JOB_NAME, matcher.group(2));
+                    mapCmdParams.put(STREAM_CMD_TYPE, cmdType.toString());
                     break;
                 } else {
                     cmdType = CMD.DROP_STREAMJOB;
@@ -86,17 +92,17 @@ public class StreamQLParser {
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
                     mapCmdParams.put(STREAM_JOB_NAME, matcher.group(2));
+                    mapCmdParams.put(STREAM_CMD_TYPE, cmdType.toString());
                     break;
                 } //else //do nothing
             }*/
 
             default: {
                 cmdType = CMD.UNMATCHED;
+                mapCmdParams.put(STREAM_CMD_TYPE, cmdType.toString());
                 break;
             }
         }
-
-        return cmdType;
     }
     public String getStreamJobName(){
         return mapCmdParams.get(STREAM_JOB_NAME);
@@ -104,7 +110,5 @@ public class StreamQLParser {
     public String getStreamJobDef(){
         return mapCmdParams.get(STREAM_JOB_DEF);
     }
-    private String getCmdParam(String keyName) {
-        return mapCmdParams.get(keyName);
-    }
+    public String getCmdType() {return mapCmdParams.get(STREAM_CMD_TYPE); }
 }

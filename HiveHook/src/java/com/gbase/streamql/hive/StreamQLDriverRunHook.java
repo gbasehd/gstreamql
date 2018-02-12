@@ -31,9 +31,10 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         Logger("change "+ hookContext.getCommand());
         String cmd = hookContext.getCommand();
         StreamQLParser parser = new StreamQLParser(cmd);
+        parser.parse();
         StreamJob job = new StreamJob(conf);
         String myCmd = "";
-        switch(parser.getCmdType()) {
+        switch(CMD.valueOf(parser.getCmdType())) {
             case CREATE_STREAMJOB: {
                 //check if streamjob name exists
                 StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(parser.getStreamJobName());
@@ -124,8 +125,6 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     public void postDriverRun(HiveDriverRunHookContext hookContext) throws Exception {
         // do nothing
     }
-
-
 
     private void Logger(String output) {
         if(conf.isDebug())
