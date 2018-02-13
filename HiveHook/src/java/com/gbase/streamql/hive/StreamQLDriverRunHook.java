@@ -121,6 +121,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         StreamJob job = new StreamJob(conf);
 
         Logger("change "+ hookContext.getCommand());
+        parser.parse();
         realRun(cmd,parser,job);
         Logger("to " + hookContext.getCommand());
     }
