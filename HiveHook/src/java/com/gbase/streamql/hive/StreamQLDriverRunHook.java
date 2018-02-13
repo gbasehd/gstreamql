@@ -30,6 +30,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         Conf.Init();
         String cmd = hookContext.getCommand();
         StreamQLParser parser = new StreamQLParser(cmd);
+        parser.parse();
         StreamJob job = new StreamJob(parser.getStreamJobName());
         StreamQLBuilder builder = new StreamQLBuilder(parser,job);
 
@@ -45,7 +46,6 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
 
     private void realRun(String cmd, StreamQLParser parser, StreamJob job, StreamQLBuilder builder) throws Exception {
         boolean isContinueHandle = false;
-        parser.parse();
         String myCmd = "";
         switch(parser.getCmdType()) {
             case CREATE_STREAMJOB: {
@@ -109,7 +109,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     }
 
     private void Logger(String output) {
-        if(Conf.SYS.IS_DEBUG)
+        if(Conf.SYS_IS_DEBUG)
             System.out.print(output);
     }
 

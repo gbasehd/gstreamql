@@ -37,10 +37,10 @@ public class StreamJob {
     }
 
     public void start() throws Exception {
-        switch(Conf.JOB.ENG){
+        switch(Conf.JOB_ENG){
             case FLINK :
             {
-                switch(Conf.JOB.TARGET) {
+                switch(Conf.JOB_TARGET) {
                     case HDFS:
                         Utility.startFlinkJob(this.jobMetaData.getName(),this.jobMetaData.getDefine());
                         break;
