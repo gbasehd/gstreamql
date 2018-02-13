@@ -1,35 +1,48 @@
 package com.gbase.streamql.hive;
 
-import java.io.*;
-import java.util.concurrent.TimeUnit;
-
 public class StreamJob {
-    private StreamQLConf conf;
 
-    public StreamJob(StreamQLConf conf)
-    {
-        this.conf = conf;
-    }
-    public void stopStreamJob(StreamJobMetaData jobMetaData) throws Exception {
-        //*********** cancle  jobflink
-        Process canclePro = Runtime.getRuntime().exec(new String[]{"sh", conf.getJsonFileDir() + "/flink-cancel-job.sh", jobMetaData.getJobid()});
-        canclePro.waitFor();
+    private String jobName;
+    private StreamJobMetaData jobMetaData = null;
 
-        //*********** kill pid
-        Process killPro = Runtime.getRuntime().exec(new String[]{"kill", "-9", jobMetaData.getPid()});
-        killPro.waitFor();
+    public StreamJob(String jobName) throws Exception {
+        this.jobName = jobName;
+        this.jobMetaData = getMetaData();
     }
 
-    public void startStreamJob(ENGINE streamEngineType, FS jsonFilePath, StreamJobMetaData jobMetaData) throws Exception {
-        switch(streamEngineType){
+    public boolean isExists() {
+        if(this.jobMetaData != null)
+            return true;
+        else
+            return false;
+    }
+
+    public boolean isStopped(){
+        if(this.jobMetaData.getStatus().equals(STATUS.STOPPED.toString()))
+            return true;
+        else
+            return false;
+    }
+
+    public boolean isRunning() {
+        if(this.jobMetaData.getStatus().equals(STATUS.RUNNING.toString()))
+            return true;
+        else
+            return false;
+    }
+
+    public void stop() throws Exception {
+        Utility.cancelFlinkJob(this.jobMetaData.getJobid());
+        Utility.killPro(this.jobMetaData.getPid());
+    }
+
+    public void start() throws Exception {
+        switch(Conf.JOB.ENG){
             case FLINK :
             {
-                switch(jsonFilePath) {
+                switch(Conf.JOB.TARGET) {
                     case HDFS:
-                        //exec cmd
-                        Process pro = Runtime.getRuntime().exec(
-                                new String[]{"sh", conf.getJsonFileDir() + "/flink-startup.sh", jobMetaData.getName(), jobMetaData.getDefine()});
-                        pro.waitFor();
+                        Utility.startFlinkJob(this.jobMetaData.getName(),this.jobMetaData.getDefine());
                         break;
                     case LOCAL:
                         break;
@@ -41,70 +54,18 @@ public class StreamJob {
             default:
                 break;
         }
-
     }
 
-    public String getStreamJobId(String streamJobName) throws Exception {
-        String jobId = "";
-        boolean getStreamIdSuccess = true;
-        int tryTimes = 0;
-        do {
-            ProcessBuilder processBuilder = new ProcessBuilder("python", conf.getJsonFileDir() + "/flink-get-running-jid.py", streamJobName);
-            Process progress = null;
-            progress = processBuilder.start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(progress.getInputStream()));
-            jobId = bufferedReader.readLine();
-            if(jobId == null || jobId.equals("None"))
-                getStreamIdSuccess = false;
-            else
-                getStreamIdSuccess = true;
-            sleepForASecond();
-            tryTimes ++;
-        }while(!getStreamIdSuccess && isTimeOut(tryTimes));
-
-        return jobId;
+    public String getJobId() throws Exception {
+        return Utility.getJobIdFromServer(this.jobName);
     }
 
     // tmp code
-    public String getStreamPid(String jsonFilePath) throws InterruptedException {
-
-        OutputStream out = null;
-        String tmpFilePath = conf.getJsonFileDir() + "/tmpStreamPid.txt" + System.currentTimeMillis();
-        String result = "";
-        String pid = "";
-
-        boolean getStreamIdSuccess = true;
-        int tryTimes = 0;
-        do {
-            try {
-                getStreamIdSuccess = true;
-                Process pro = Runtime.getRuntime().exec(new String[]{"sudo", "sh", conf.getJsonFileDir() + "/getStreamPid.sh", jsonFilePath, tmpFilePath});
-                pro.waitFor();
-
-                File pidFile = new File(tmpFilePath);
-                InputStreamReader reader = new InputStreamReader(new FileInputStream(pidFile));
-                BufferedReader buffer = new BufferedReader(reader);
-
-                pid = buffer.readLine();
-                Logger("\n&&&getStreamPid streamPid:" + pid + "\n");
-
-                sleepForASecond();
-                tryTimes ++;
-            } catch (Exception e) { getStreamIdSuccess = false; }
-        }while(!getStreamIdSuccess && isTimeOut(tryTimes));
-
-        return pid;
-    }
-    private void sleepForASecond() throws InterruptedException {
-        TimeUnit.SECONDS.sleep(conf.getMinWaitsSecondInterval());
+    public String getPid() throws InterruptedException {
+         return Utility.getPid(this.jobMetaData.getDefine());
     }
 
-    private boolean isTimeOut(int tryTimes) {
-        return tryTimes < conf.getMaxTryTimes();
-    }
-
-    private void Logger(String output) {
-        if(conf.isDebug())
-            System.out.print(output);
+    private StreamJobMetaData getMetaData() throws Exception{
+        return Utility.getMetaFromHive(this.jobName);
     }
 }

@@ -9,13 +9,12 @@ import org.apache.log4j.Logger;
 
 public class HiveService {
     static Logger logger = Logger.getLogger(HiveService.class);
-    private static StreamQLConf conf = new StreamQLConf();
 
     public static Connection getConn(){
         Connection conn = null;
         try {
-            Class.forName(conf.getDriverName());
-            conn = DriverManager.getConnection(conf.getHiveUrl(),conf.getHiveUser(),conf.getHivePass());
+            Class.forName(Conf.HIVE.DRIVER);
+            conn = DriverManager.getConnection(Conf.HIVE.URL,Conf.HIVE.USER,Conf.HIVE.PASS);
         } catch (ClassNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

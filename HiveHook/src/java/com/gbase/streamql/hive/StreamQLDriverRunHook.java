@@ -24,105 +24,17 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 
 public class StreamQLDriverRunHook implements HiveDriverRunHook {
 
-    StreamQLConf conf = new StreamQLConf();
-
-    private void realRun(String cmd, StreamQLParser parser, StreamJob job) throws Exception {
-        String myCmd = "";
-        switch(parser.getCmdType()) {
-            case CREATE_STREAMJOB: {
-                //check if streamjob name exists
-                StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(parser.getStreamJobName());
-                if(jobMetaData != null && jobMetaData.getName().equals(parser.getStreamJobName())) {
-                    throw  new Exception("Create stream job error! Stream job name \"" + parser.getStreamJobName() + "\" exists!");
-                }
-                //insert data
-                myCmd = "Insert into " + conf.getDbName() + ".streamjobmgr(name, pid, jobid, status, define) values ('" + parser.getStreamJobName() + "',NULL,NULL,'STOPPED','" + parser.getStreamJobDef() + "')";
-                Utility.setCmd(cmd, myCmd);
-                break;
-            }
-            case SHOW_STREAMJOBS: {
-                //TODO
-                //check status again
-
-                myCmd = "Select name, jobid, status, define from " + conf.getDbName() + ".streamjobmgr";
-                Utility.setCmd(cmd, myCmd);
-                break;
-            }
-            case START_STREAMJOB: {
-                //1.Select define,status from ghd.streamjobmgr where name = <streamjob_name>
-                StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(parser.getStreamJobName());
-                //2.check status
-                if(jobMetaData == null)
-                    throw new Exception("Start stream job failed! create stream job \"" + parser.getStreamJobName() + "\" first!");
-                if(jobMetaData.getStatus().equals(STATUS.STOPPED.toString())) {
-                    //3.exec stremingPro
-                    job.startStreamJob(ENGINE.FLINK, FS.HDFS, jobMetaData);
-                    //4.Update ghd.streamjobmgr set status = 'RUNNING' , id = <jobid> where  name = <streamjob_name>
-                    myCmd = "Update " + conf.getDbName() +".streamjobmgr set status = '" + STATUS.RUNNING.toString() +
-                            "' , pid = \"" + job.getStreamPid(jobMetaData.getDefine()) +
-                            "\", jobid = \"" + job.getStreamJobId(parser.getStreamJobName()) +
-                            "\" where  name = \"" + parser.getStreamJobName() + "\"";
-                    Utility.setCmd(cmd, myCmd);
-                } else {
-                    throw new Exception("Execute error! target stream job is running!");
-                }
-                break;
-            }
-            case STOP_STREAMJOB: {
-                //1.Select id,status from ghd.streamjobmgr where name = <streamjob_name>
-                StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(parser.getStreamJobName());
-                //2.check status
-                if(jobMetaData == null)
-                    throw new Exception("Stop stream job failed! create stream job \"" + parser.getStreamJobName() + "\" first!");
-                if(jobMetaData.getStatus().equals(STATUS.RUNNING.toString())) {
-                    //3.Kill streamjob_id
-                    job.stopStreamJob(jobMetaData);
-                    //4.Update ghd.streamjobmgr set status = 'STOPPED' , id = <jobid> where  name = <streamjob_name>
-                    myCmd = "Update " + conf.getDbName() +".streamjobmgr set status = '" + STATUS.STOPPED.toString() +
-                            "' , pid = \"NULL\", jobid = \"NULL\" where  name = \"" + parser.getStreamJobName() + "\"";
-                    Utility.setCmd(cmd, myCmd);
-                } else {
-                    //do nothing
-                }
-                break;
-            }
-            case DROP_STREAMJOB: {
-                //1.Select status from ghd.streamjobmgr where name = <streamjob_name>
-                StreamJobMetaData jobMetaData = Utility.getStreamJobMetaData(parser.getStreamJobName());
-                //2.check status
-                if(jobMetaData == null)
-                    throw new Exception("Drop stream job failed! create stream job \"" + parser.getStreamJobName() + "\" first!");
-                if(jobMetaData.getStatus().equals(STATUS.STOPPED.toString())) {
-                    //3.Delete from ghd.streamjobmgr where name = <streamjob_name>
-                    myCmd = "Delete from " + conf.getDbName() +".streamjobmgr where  name = \"" + parser.getStreamJobName() + "\"";
-                    Utility.setCmd(cmd, myCmd);
-                } else {
-                    throw new Exception("Execute error! Unable to delete the running job!");
-                }
-                break;
-            }
-            /*case DESCRIBE_STREAMJOB: {
-                myCmd = "desc table" + parser.getStreamJobName();
-                Utility.setCmd(cmd, myCmd);
-                break;
-            }*/
-            case UNMATCHED:
-                break;
-            default:
-                break;
-        }
-    }
-
     //@Override
     public void preDriverRun(HiveDriverRunHookContext hookContext) throws Exception {
 
+        Conf.Init();
         String cmd = hookContext.getCommand();
         StreamQLParser parser = new StreamQLParser(cmd);
-        StreamJob job = new StreamJob(conf);
+        StreamJob job = new StreamJob(parser.getStreamJobName());
+        StreamQLBuilder builder = new StreamQLBuilder(parser,job);
 
         Logger("change "+ hookContext.getCommand());
-        parser.parse();
-        realRun(cmd,parser,job);
+        realRun(cmd,parser,job,builder);
         Logger("to " + hookContext.getCommand());
     }
 
@@ -131,10 +43,73 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         // do nothing
     }
 
-
+    private void realRun(String cmd, StreamQLParser parser, StreamJob job, StreamQLBuilder builder) throws Exception {
+        boolean isContinueHandle = false;
+        parser.parse();
+        String myCmd = "";
+        switch(parser.getCmdType()) {
+            case CREATE_STREAMJOB: {
+                if( job.isExists()) {
+                    throw new Exception("Create stream job error! Stream job name \"" +
+                                         parser.getStreamJobName() + "\" exists!");
+                }
+                isContinueHandle = true;
+                break;
+            }
+            case SHOW_STREAMJOBS: {
+                //TODO
+                //check status again
+                isContinueHandle = true;
+                break;
+            }
+            case START_STREAMJOB: {
+                if(!job.isExists())
+                    throw new Exception("Start stream job failed! create stream job \"" +
+                                         parser.getStreamJobName() + "\" first!");
+                if(job.isStopped()) {
+                    job.start();
+                    isContinueHandle = true;
+                } else {
+                    throw new Exception("Execute error! target stream job is running!");
+                }
+                break;
+            }
+            case STOP_STREAMJOB: {
+                if(!job.isExists())
+                    throw new Exception("Stop stream job failed! create stream job \"" +
+                                         parser.getStreamJobName() + "\" first!");
+                if(job.isRunning()) {
+                    job.stop();
+                    isContinueHandle = true;
+                } else {
+                    //do nothing
+                }
+                break;
+            }
+            case DROP_STREAMJOB: {
+                if(!job.isExists())
+                    throw new Exception("Drop stream job failed! create stream job \"" +
+                                         parser.getStreamJobName() + "\" first!");
+                if(job.isStopped()) {
+                    isContinueHandle = true;
+                } else {
+                    throw new Exception("Execute error! Unable to delete the running job!");
+                }
+                break;
+            }
+            case UNMATCHED:
+                break;
+            default:
+                break;
+        }
+        if(isContinueHandle) {
+            myCmd = builder.getSql();
+            Utility.setCmd(cmd, myCmd);
+        }
+    }
 
     private void Logger(String output) {
-        if(conf.isDebug())
+        if(Conf.SYS.IS_DEBUG)
             System.out.print(output);
     }
 
