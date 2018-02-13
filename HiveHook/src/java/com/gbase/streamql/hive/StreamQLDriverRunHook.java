@@ -64,8 +64,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
             }
             case START_STREAMJOB: {
                 if(!job.isExists())
-                    throw new Exception("Start stream job failed! create stream job \"" +
-                                         parser.getStreamJobName() + "\" first!");
+                    throw new Exception("Start stream job failed! Stream job \"" +
+                                         parser.getStreamJobName() + "\" does not exist!");
                 if(job.isStopped()) {
                     job.start();
                     isContinueHandle = true;
@@ -76,8 +76,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
             }
             case STOP_STREAMJOB: {
                 if(!job.isExists())
-                    throw new Exception("Stop stream job failed! create stream job \"" +
-                                         parser.getStreamJobName() + "\" first!");
+                    throw new Exception("Stop stream job failed! Stream job \"" +
+                                        parser.getStreamJobName() + "\" does not exist!");
                 if(job.isRunning()) {
                     job.stop();
                     isContinueHandle = true;
@@ -88,8 +88,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
             }
             case DROP_STREAMJOB: {
                 if(!job.isExists())
-                    throw new Exception("Drop stream job failed! create stream job \"" +
-                                         parser.getStreamJobName() + "\" first!");
+                    throw new Exception("Drop stream job failed! Stream job \"" +
+                                        parser.getStreamJobName() + "\" does not exist!");
                 if(job.isStopped()) {
                     isContinueHandle = true;
                 } else {
