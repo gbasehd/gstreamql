@@ -29,7 +29,7 @@ public class StreamQLBuilder {
                         Conf.SYS_DB +".streamjobmgr set status = '" + STATUS.RUNNING.toString() +
                        "' , pid = \"" + this.job.getPid() +
                        "\", jobid = \"" + this.job.getJobId() +
-                       "\" where  name = \"" + this.parser.getStreamJobName() + "\"";
+                       "\" where name = \"" + this.parser.getStreamJobName() + "\"";
                 break;
             }
             case STOP_STREAMJOB: {
