@@ -6,6 +6,8 @@ public class StreamJob {
     private StreamJobMetaData jobMetaData = null;
 
     public StreamJob(String jobName) throws Exception {
+        if(jobName == null || jobName.equals(""))
+            throw new Exception("Generate instance failed, jobName is null!");
         this.jobName = jobName;
         this.jobMetaData = getMetaData();
     }
@@ -66,6 +68,8 @@ public class StreamJob {
     }
 
     private StreamJobMetaData getMetaData() throws Exception{
+        if(this.jobName == null || this.jobName.equals(""))
+            throw new Exception("GetMetaData error, jobName undefined!");
         return Utility.getMetaFromHive(this.jobName);
     }
 }

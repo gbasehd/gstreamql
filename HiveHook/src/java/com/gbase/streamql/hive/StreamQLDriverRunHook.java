@@ -31,12 +31,15 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         String cmd = hookContext.getCommand();
         StreamQLParser parser = new StreamQLParser(cmd);
         parser.parse();
-        StreamJob job = new StreamJob(parser.getStreamJobName());
-        StreamQLBuilder builder = new StreamQLBuilder(parser,job);
+        if(!(parser.getStreamJobName() == null || parser.getStreamJobName().equals(""))) {
+            StreamJob job = new StreamJob(parser.getStreamJobName());
+            StreamQLBuilder builder = new StreamQLBuilder(parser,job);
 
-        Logger("change "+ hookContext.getCommand());
-        realRun(cmd,parser,job,builder);
-        Logger("to " + hookContext.getCommand());
+            Logger("change "+ hookContext.getCommand());
+            realRun(cmd,parser,job,builder);
+            Logger("to " + hookContext.getCommand());
+        }
+
     }
 
     //@Override
