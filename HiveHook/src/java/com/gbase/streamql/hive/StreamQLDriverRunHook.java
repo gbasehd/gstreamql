@@ -20,7 +20,6 @@ package com.gbase.streamql.hive;
 
 import org.apache.hadoop.hive.ql.HiveDriverRunHook;
 import org.apache.hadoop.hive.ql.HiveDriverRunHookContext;
-import org.apache.hadoop.hive.ql.session.SessionState;
 
 public class StreamQLDriverRunHook implements HiveDriverRunHook {
 
@@ -40,6 +39,10 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
             Logger("to " + hookContext.getCommand());
         }
 
+        //for stream manage
+        Logger("change "+ hookContext.getCommand());
+        Utility.setCmd(cmd, parser.getTransformSql());
+        Logger("to " + hookContext.getCommand());
     }
 
     //@Override
@@ -115,5 +118,4 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         if(Conf.SYS_IS_DEBUG)
             System.out.print(output);
     }
-
 }

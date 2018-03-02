@@ -12,6 +12,9 @@ public class StreamQLParser {
     private String PATTERN_STOP_STREAMJOB = "(^[ ]*stop[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
     private String PATTERN_DROP_STREAMJOB = "(^[ ]*drop[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
     private String PATTERN_DESCRIBE_STREAMJOB = "^([ ]*describe[ ]+)([a-zA-Z/0-9]+)([ ]*)$";
+    private String PATTERN_CREATE_STREAM = "(^[ ]*CREATE[ ]+STREAM[ ]+)(.*)";
+    private String PATTERN_SHOW_STREAMS = "^[ ]*SHOW[ ]+STREAMS[ ]*$";
+    private String PATTERN_DROP_STREAM = "(^[ ]*drop[ ]+stream[ ]+)([a-zA-Z0-9]+)([ ]*)$";
     private String STREAM_JOB_NAME = "streamJobName";
     private String STREAM_JOB_DEF = "streamJobDef";
     private CMD cmdType;
@@ -33,10 +36,8 @@ public class StreamQLParser {
                 if(matcher.matches()) {
                     mapCmdParams.put(STREAM_JOB_NAME, matcher.group(2));
                     mapCmdParams.put(STREAM_JOB_DEF, matcher.group(4));
-                    this.cmdType = cmdType;
+                    this.cmdType = CMD.CREATE_STREAMJOB;
                     break;
-                } else {
-                    cmdType = CMD.SHOW_STREAMJOBS;
                 }
             }
             case SHOW_STREAMJOBS: {
@@ -44,10 +45,8 @@ public class StreamQLParser {
                 Pattern pattern = Pattern.compile(regExShowStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
-                    this.cmdType = cmdType;
+                    this.cmdType = CMD.SHOW_STREAMJOBS;
                     break;
-                } else {
-                    cmdType = CMD.START_STREAMJOB;
                 }
             }
             case START_STREAMJOB: {
@@ -56,10 +55,8 @@ public class StreamQLParser {
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
                     mapCmdParams.put(STREAM_JOB_NAME, matcher.group(2));
-                    this.cmdType = cmdType;
+                    this.cmdType = CMD.START_STREAMJOB;
                     break;
-                } else {
-                    cmdType = CMD.STOP_STREAMJOB;
                 }
             }
             case STOP_STREAMJOB: {
@@ -68,10 +65,8 @@ public class StreamQLParser {
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
                     mapCmdParams.put(STREAM_JOB_NAME, matcher.group(2));
-                    this.cmdType = cmdType;
+                    this.cmdType = CMD.STOP_STREAMJOB;
                     break;
-                } else {
-                    cmdType = CMD.DROP_STREAMJOB;
                 }
             }
             case DROP_STREAMJOB:{
@@ -80,10 +75,8 @@ public class StreamQLParser {
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
                     mapCmdParams.put(STREAM_JOB_NAME, matcher.group(2));
-                    this.cmdType = cmdType;
+                    this.cmdType = CMD.DROP_STREAMJOB;
                     break;
-                } else {
-                    cmdType = CMD.DROP_STREAMJOB;
                 }
             }
             /*case DESCRIBE_STREAMJOB: {
@@ -96,19 +89,44 @@ public class StreamQLParser {
                     break;
                 } //else //do nothing
             }*/
-
+            case CREATE_STREAM: {
+                String regExCreateStream = PATTERN_CREATE_STREAM;
+                Pattern pattern = Pattern.compile(regExCreateStream, Pattern.CASE_INSENSITIVE);
+                Matcher matcher = pattern.matcher(cmd);
+                if (matcher.matches()) {
+                    cmd = cmd.replace(matcher.group(1), "CREATE TABLE ");
+                    this.cmdType = CMD.CREATE_STREAM;
+                    break;
+                }
+            }
+            case SHOW_STREAMS: {
+                String regExCreateStream = PATTERN_SHOW_STREAMS;
+                Pattern pattern = Pattern.compile(regExCreateStream, Pattern.CASE_INSENSITIVE);
+                Matcher matcher = pattern.matcher(cmd);
+                if (matcher.matches()) {
+                    cmd = "SHOW TABLES";
+                    this.cmdType = CMD.SHOW_STREAMS;
+                    break;
+                }
+            }
+            case DROP_STREAM: {
+                String regExCreateStream = PATTERN_DROP_STREAM;
+                Pattern pattern = Pattern.compile(regExCreateStream, Pattern.CASE_INSENSITIVE);
+                Matcher matcher = pattern.matcher(cmd);
+                if (matcher.matches()) {
+                    cmd = cmd.replace(matcher.group(1), "DROP TABLE ");
+                    this.cmdType = CMD.DROP_STREAM;
+                    break;
+                }
+            }
             default: {
-                cmdType = CMD.UNMATCHED;
                 this.cmdType = cmdType;
                 break;
             }
         }
     }
-    public String getStreamJobName(){
-        return mapCmdParams.get(STREAM_JOB_NAME);
-    }
-    public String getStreamJobDef(){
-        return mapCmdParams.get(STREAM_JOB_DEF);
-    }
+    public String getStreamJobName(){ return mapCmdParams.get(STREAM_JOB_NAME); }
+    public String getStreamJobDef(){ return mapCmdParams.get(STREAM_JOB_DEF); }
+    public String getTransformSql() { return this.cmd; }
     public CMD getCmdType() {return this.cmdType; }
 }
