@@ -4,7 +4,7 @@ public class Conf {
     //public class System{
         public static String SYS_DB = "mjw";
         public static String SYS_JSON_DIR = "/home/mjw";
-        public static boolean SYS_IS_DEBUG = false;
+        public static boolean SYS_IS_DEBUG = true;
         public static int SYS_MIN_WAITS_SECOND_INTERVAL = 1;
         public static int SYS_MAX_TRY_TIMES = 50;
     //}

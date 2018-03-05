@@ -3,6 +3,7 @@ package com.gbase.streamql.hive;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.sql.*;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Utility {
@@ -81,7 +82,7 @@ public class Utility {
     public static StreamJobMetaData getMetaFromHive(String jobName) throws Exception{
         Connection conn = HiveService.getConn();
         Statement stmt  = HiveService.getStmt(conn);
-        String sql = "select name, pid, jobid, status, define from mjw.streamjobmgr where name = \"" + jobName +"\"";
+        String sql = "select name, pid, jobid, status, define from " + Conf.SYS_DB + ".streamjobmgr where name = \"" + jobName +"\"";
         ResultSet res   = stmt.executeQuery(sql);
         ResultSetMetaData meta = res.getMetaData();
         StreamJobMetaData jobMeta = null;
@@ -105,8 +106,25 @@ public class Utility {
     private static boolean isTimeOut(int tryTimes) {
         return tryTimes < Conf.SYS_MAX_TRY_TIMES;
     }
-    private static void Logger(String output) {
+
+    public static void Logger(String output) {
         if(Conf.SYS_IS_DEBUG)
             System.out.print(output);
+    }
+
+    public static String COL_BEGIN = "begin1";
+    public static String COL_END = "end1";
+    public static String COL_RUNTIME_TYPE = "runtimetype";
+    public static String COL_SQL = "sql";
+
+    public static void edgePersist(Map<String, String> edgeInfo) throws SQLException {
+        Connection conn = HiveService.getConn();
+        Statement stmt  = HiveService.getStmt(conn);
+        String sql = "insert into " + Conf.SYS_DB + ".tmp(" + COL_BEGIN + ", " + COL_END + ", " + COL_RUNTIME_TYPE + ", " + COL_SQL + ") values (\""
+                + edgeInfo.get(COL_BEGIN) + "\", \""
+                + edgeInfo.get(COL_END) + "\", \""
+                + edgeInfo.get(COL_RUNTIME_TYPE) + "\", \""
+                + edgeInfo.get(COL_SQL) + "\")";
+        stmt.execute(sql);
     }
 }

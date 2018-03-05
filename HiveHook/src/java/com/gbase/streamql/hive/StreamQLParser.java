@@ -6,15 +6,19 @@ import java.util.HashMap;
 
 public class StreamQLParser {
 
-    private String PATTERN_CREATE_STREAMJOB = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"jobdef\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\"\\)[ ]*)$";
+    private String PATTERN_CREATE_STREAMJOB = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9\\.]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"jobdef\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\"\\)[ ]*)$";
     private String PATTERN_SHOW_STREAMJOBS = "^[ ]*SHOW[ ]+STREAMJOBS[ ]*$";
-    private String PATTERN_START_STREAMJOB = "(^[ ]*start[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
-    private String PATTERN_STOP_STREAMJOB = "(^[ ]*stop[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
-    private String PATTERN_DROP_STREAMJOB = "(^[ ]*drop[ ]+streamjob[ ]+)([a-zA-Z0-9]+)([ ]*)$";
+    private String PATTERN_START_STREAMJOB = "(^[ ]*start[ ]+streamjob[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
+    private String PATTERN_STOP_STREAMJOB = "(^[ ]*stop[ ]+streamjob[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
+    private String PATTERN_DROP_STREAMJOB = "(^[ ]*drop[ ]+streamjob[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
     private String PATTERN_DESCRIBE_STREAMJOB = "^([ ]*describe[ ]+)([a-zA-Z/0-9]+)([ ]*)$";
     private String PATTERN_CREATE_STREAM = "(^[ ]*CREATE[ ]+STREAM[ ]+)(.*)";
     private String PATTERN_SHOW_STREAMS = "^[ ]*SHOW[ ]+STREAMS[ ]*$";
-    private String PATTERN_DROP_STREAM = "(^[ ]*drop[ ]+stream[ ]+)([a-zA-Z0-9]+)([ ]*)$";
+    private String PATTERN_DROP_STREAM = "(^[ ]*drop[ ]+stream[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
+    //TODO
+    private String PATTERN_INSERT_STREAM_WINDOW = "(^[ ]*insert[ ]+into[ ]+[a-zA-Z0-9\\.]+[ ]+select[ ]+.*from[ ]+[a-zA-Z0-9\\.]+[ ]+)(STREAMWINDOW[ ]+[a-zA-Z0-9\\.]+[ ]+as[ ]*.*)";
+    private String PATTERN_INSERT_STREAM_JOIN = "insert stream join";
+    private String PATTERN_INSERT_sth = "^[ ]*insert[ ]+into[ ]+[a-zA-Z0-9\\.]+[ ]+select.*";
     private String STREAM_JOB_NAME = "streamJobName";
     private String STREAM_JOB_DEF = "streamJobDef";
     private CMD cmdType;
@@ -116,6 +120,31 @@ public class StreamQLParser {
                 if (matcher.matches()) {
                     cmd = cmd.replace(matcher.group(1), "DROP TABLE ");
                     this.cmdType = CMD.DROP_STREAM;
+                    break;
+                }
+            }
+            case INSERT_STREAM: {
+                String regExInsertWin = PATTERN_INSERT_STREAM_WINDOW;
+                Pattern patternInsertWin = Pattern.compile(regExInsertWin, Pattern.CASE_INSENSITIVE);
+                Matcher matcherInsertWin = patternInsertWin.matcher(cmd);
+
+                String regExInsertJoin = PATTERN_INSERT_STREAM_JOIN;
+                Pattern patternInsertJoin = Pattern.compile(regExInsertJoin, Pattern.CASE_INSENSITIVE);
+                Matcher matcherInsertJoin = patternInsertJoin.matcher(cmd);
+
+                String regExInsertSth = PATTERN_INSERT_sth;
+                Pattern patternInsertSth = Pattern.compile(regExInsertSth, Pattern.CASE_INSENSITIVE);
+                Matcher matcherInsertSth = patternInsertSth.matcher(cmd);
+
+                if (matcherInsertWin.matches()) {
+                    cmd = matcherInsertWin.group(1);
+                    this.cmdType = CMD.INSERT_STREAM;
+                    break;
+                } else if (matcherInsertJoin.matches()) {
+                    this.cmdType = CMD.INSERT_STREAM;
+                    break;
+                } else if (matcherInsertSth.matches()) {
+                    this.cmdType = CMD.INSERT_STREAM;
                     break;
                 }
             }

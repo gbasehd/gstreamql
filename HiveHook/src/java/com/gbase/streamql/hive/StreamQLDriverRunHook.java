@@ -21,7 +21,7 @@ package com.gbase.streamql.hive;
 import org.apache.hadoop.hive.ql.HiveDriverRunHook;
 import org.apache.hadoop.hive.ql.HiveDriverRunHookContext;
 
-public class StreamQLDriverRunHook implements HiveDriverRunHook {
+public class StreamQLDriverRunHook implements HiveDriverRunHook{
 
     //@Override
     public void preDriverRun(HiveDriverRunHookContext hookContext) throws Exception {
@@ -34,9 +34,9 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
             StreamJob job = new StreamJob(parser.getStreamJobName());
             StreamQLBuilder builder = new StreamQLBuilder(parser,job);
 
-            Logger("change "+ hookContext.getCommand());
+            Logger("change "+ hookContext.getCommand() + " \n");
             realRun(cmd,parser,job,builder);
-            Logger("to " + hookContext.getCommand());
+            Logger("to " + hookContext.getCommand() + "\n");
         }
 
         //for stream manage

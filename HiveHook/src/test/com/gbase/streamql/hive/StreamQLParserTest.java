@@ -7,21 +7,22 @@ import static org.junit.Assert.*;
 public class StreamQLParserTest {
 
     //stremjob management
-    String createSql = "CREATE STREAMJOB streamTest TBLPROPERTIES (\"jobdef\"=\"/streamingPro/flink.json\")";
+    String createSql = "CREATE STREAMJOB db.streamTest TBLPROPERTIES (\"jobdef\"=\"/streamingPro/flink.json\")";
     String showSql = "SHOW STREAMJOBS";
-    String startSql = "START STREAMJOB streamTest";
-    String stopSql = "stop streamjob streamTest";
-    String dropSql = "drop streamjob streamTest";
+    String startSql = "START STREAMJOB db.streamTest";
+    String stopSql = "stop streamjob db.streamTest";
+    String dropSql = "drop streamjob db.streamTest";
     StreamQLParser createSqlParser = new StreamQLParser(createSql);
     StreamQLParser showSqlParser = new StreamQLParser(showSql);
     StreamQLParser startSqlParser = new StreamQLParser(startSql);
     StreamQLParser stopSqlParser = new StreamQLParser(stopSql);
     StreamQLParser dropSqlParser = new StreamQLParser(dropSql);
     //stream management
-    StreamQLParser createStreamSqlParser = new StreamQLParser("CREATE STREAM streamTest(a int) TBLPROPERTIES (\"testKey\"=\"testValue\")");
+    StreamQLParser createStreamSqlParser = new StreamQLParser("CREATE STREAM db.streamTest(a int) TBLPROPERTIES (\"testKey\"=\"\testValue\\a.txt\")");
     StreamQLParser showStreamSqlParser = new StreamQLParser("SHOW STREAMS");
-    StreamQLParser dropStreamSqlParser = new StreamQLParser("DROP STREAM streamTest");
-    StreamQLParser insertSelectSqlParser = new StreamQLParser("INSERT INTO output SELECT col FROM input STREAMWINDOW win AS (LENGTH 1 SECOND SLIDE 1 SECOND)");
+    StreamQLParser dropStreamSqlParser = new StreamQLParser("DROP STREAM db.streamTest");
+    StreamQLParser insertSelectSqlParser = new StreamQLParser("INSERT INTO db.output SELECT db.col, db.col2 FROM db.input STREAMWINDOW win AS (LENGTH 1 SECOND SLIDE 1 SECOND)");
+    //StreamQLParser insertSelectSqlParser = new StreamQLParser("INSERT INTO db.output SELECT * FROM db.input STREAMWINDOW win AS (LENGTH 1 SECOND SLIDE 1 SECOND)");
     //grant management
     
     private void init() {
