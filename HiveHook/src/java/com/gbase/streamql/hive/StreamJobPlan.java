@@ -1,6 +1,5 @@
 package com.gbase.streamql.hive;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -8,62 +7,79 @@ public class StreamJobPlan {
 
     private String[] inputName;
     private String outputName;
-    private String plan;
+    private String planContent;
+    private int count;
 
     public StreamJobPlan(String[] inputName, String outputName){
         this.inputName = inputName;
         this.outputName = outputName;
+        count = 0;
+        planContent = "";
     }
 
-    private ArrayList<String> getInputs(String current){
-        ArrayList<String> inputs = new ArrayList<String>();
+    public String getContent() throws Exception {
         StreamRelation relation = new StreamRelation();
-        if(relation.hasPrev(current,RUNTIME_TYPE.DERIVE)) {
-            String[] prevs = relation.getPrev(current, RUNTIME_TYPE.DERIVE);
-            for(int i = 0; i < prevs.length; i++) {
-                ArrayList<String> branchInputs = getInputs(prevs[i]);
-                inputs.addAll(branchInputs);
-            }
-        }
-        else {
-            inputs.add(current);
-        }
+        String planContent = "";
 
-        return inputs;
-    }
-
-
-    public String getPlan() throws Exception {
-        StreamRelation relation = new StreamRelation();
-
-        if(relation.hasPrev(this.outputName,RUNTIME_TYPE.OUTPUT)) {
-            ArrayList<String> allInputs = new ArrayList<String>();
-            String[] preStreams = relation.getPrev(this.outputName,RUNTIME_TYPE.OUTPUT);
-            for(int i = 0; i < preStreams.length; i++) {
-                ArrayList<String> inputs = getInputs(preStreams[i]);
-                allInputs.addAll(inputs);
-            }
-
-            //remove duplicate
-            HashSet h = new HashSet(allInputs);
-            allInputs.clear();
-            allInputs.addAll(h);
-
-            String[] allInputs2 = new String[allInputs.size()];
-            allInputs2 = allInputs.toArray(allInputs2);
-            Arrays.sort(allInputs2);
+        if(relation.isOutput(this.outputName)) {
+            HashSet<String> allInputs = new HashSet<String>();
+            allInputs = getLeaves(this.outputName);
+            String[] allInputsArr = new String[allInputs.size()];
+            allInputsArr = allInputs.toArray(allInputsArr);
+            Arrays.sort(allInputsArr);
             Arrays.sort(inputName);
-            if (Arrays.equals(allInputs2, inputName)) {
-
+            if (Arrays.equals(allInputsArr, inputName)) {
+                planContent = this.planContent;
             }
             else {
-                throw new Exception(String.format("The input stream \'%s\' cannot match", this.inputName));
+                throw new Exception(String.format("The input stream \'%s\' cannot match", getInputNames()));
             }
         }
         else {
             throw new Exception(String.format("The output stream \'%s\' does not exist", this.outputName));
         }
-        return this.plan;
+        return planContent;
+    }
+
+    private void addPlanContent(String name){
+        this.planContent += "[" + this.count +"]";
+        this.planContent += name;
+        this.planContent += "->";
+    }
+    private void markeInput(String name){
+        this.planContent += "[" + this.count +"]";
+        this.planContent += name;
+        this.planContent += "(end) ";
+        this.count++;
+    }
+
+    private  String getInputNames()
+    {
+        String inputNames = "";
+        for(int i = 0 ; i < this.inputName.length-1; i++){
+            inputNames += this.inputName[i];
+            inputNames += ", ";
+        }
+        inputNames += this.inputName[this.inputName.length-1];
+        return inputNames;
+    }
+
+    private HashSet<String> getLeaves(String root){
+        HashSet<String> leaves = new HashSet<String>();
+        StreamRelation relation = new StreamRelation();
+        if(relation.hasPrev(root)) {
+            addPlanContent(root);
+            String[] prevs = relation.getPrev(root);
+            for(int i = 0; i < prevs.length; i++) {
+                HashSet<String> branchLeaves = getLeaves(prevs[i]);
+                leaves.addAll(branchLeaves);
+            }
+        }
+        else {
+            leaves.add(root);
+            markeInput(root);
+        }
+        return leaves;
     }
 }
 
