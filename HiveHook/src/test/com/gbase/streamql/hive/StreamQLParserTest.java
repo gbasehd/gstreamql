@@ -19,11 +19,11 @@ public class StreamQLParserTest {
         startSql.parse();
         stopSql.parse();
         dropSql.parse();
-        assertEquals(CMD.valueOf(createSql.getCmdType()), CMD.CREATE_STREAMJOB);
-        assertEquals(CMD.valueOf(showSql.getCmdType()), CMD.SHOW_STREAMJOBS);
-        assertEquals(CMD.valueOf(startSql.getCmdType()), CMD.START_STREAMJOB);
-        assertEquals(CMD.valueOf(stopSql.getCmdType()), CMD.STOP_STREAMJOB);
-        assertEquals(CMD.valueOf(dropSql.getCmdType()), CMD.DROP_STREAMJOB);
+        assertEquals(createSql.getCmdType(), CMD.CREATE_STREAMJOB);
+        assertEquals(showSql.getCmdType(), CMD.SHOW_STREAMJOBS);
+        assertEquals(startSql.getCmdType(), CMD.START_STREAMJOB);
+        assertEquals(stopSql.getCmdType(), CMD.STOP_STREAMJOB);
+        assertEquals(dropSql.getCmdType(), CMD.DROP_STREAMJOB);
     }
 
     @Test

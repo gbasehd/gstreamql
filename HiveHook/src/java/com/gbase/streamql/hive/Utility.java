@@ -14,7 +14,7 @@ public class Utility {
     }
 
     public static void cancelFlinkJob(String jobId) throws Exception{
-        Process canclePro = Runtime.getRuntime().exec(new String[]{"sh", Conf.SYS.JSON_DIR + "/flink-cancel-job.sh", jobId});
+        Process canclePro = Runtime.getRuntime().exec(new String[]{"sh", Conf.SYS_JSON_DIR + "/flink-cancel-job.sh", jobId});
         canclePro.waitFor();
     }
 
@@ -25,7 +25,7 @@ public class Utility {
 
     public static void startFlinkJob(String jobName, String jobDefine ) throws Exception {
         Process pro = Runtime.getRuntime().exec(
-                new String[]{"sh", Conf.SYS.JSON_DIR + "/flink-startup.sh", jobName, jobDefine});
+                new String[]{"sh", Conf.SYS_JSON_DIR + "/flink-startup.sh", jobName, jobDefine});
         pro.waitFor();
     }
 
@@ -34,7 +34,7 @@ public class Utility {
         boolean getStreamIdSuccess = true;
         int tryTimes = 0;
         do {
-            ProcessBuilder processBuilder = new ProcessBuilder("python", Conf.SYS.JSON_DIR + "/flink-get-running-jid.py", jobName);
+            ProcessBuilder processBuilder = new ProcessBuilder("python", Conf.SYS_JSON_DIR + "/flink-get-running-jid.py", jobName);
             Process progress = null;
             progress = processBuilder.start();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(progress.getInputStream()));
@@ -51,7 +51,7 @@ public class Utility {
 
     public static String getPid( String jobDefine){
         OutputStream out = null;
-        String tmpFilePath = Conf.SYS.JSON_DIR + "/tmpStreamPid.txt" + System.currentTimeMillis();
+        String tmpFilePath = Conf.SYS_JSON_DIR + "/tmpStreamPid.txt" + System.currentTimeMillis();
         String result = "";
         String pid = "";
 
@@ -60,7 +60,7 @@ public class Utility {
         do {
             try {
                 getStreamIdSuccess = true;
-                Process pro = Runtime.getRuntime().exec(new String[]{"sudo", "sh", Conf.SYS.JSON_DIR + "/getStreamPid.sh", jobDefine, tmpFilePath});
+                Process pro = Runtime.getRuntime().exec(new String[]{"sudo", "sh", Conf.SYS_JSON_DIR + "/getStreamPid.sh", jobDefine, tmpFilePath});
                 int i = pro.waitFor();
 
                 File pidFile = new File(tmpFilePath);
@@ -99,14 +99,14 @@ public class Utility {
     }
 
     private static void sleepForASecond() throws InterruptedException {
-        TimeUnit.SECONDS.sleep(Conf.SYS.MIN_WAITS_SECOND_INTERVAL);
+        TimeUnit.SECONDS.sleep(Conf.SYS_MIN_WAITS_SECOND_INTERVAL);
     }
 
     private static boolean isTimeOut(int tryTimes) {
-        return tryTimes < Conf.SYS.MAX_TRY_TIMES;
+        return tryTimes < Conf.SYS_MAX_TRY_TIMES;
     }
     private static void Logger(String output) {
-        if(Conf.SYS.IS_DEBUG)
+        if(Conf.SYS_IS_DEBUG)
             System.out.print(output);
     }
 }

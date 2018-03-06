@@ -13,8 +13,8 @@ public class HiveService {
     public static Connection getConn(){
         Connection conn = null;
         try {
-            Class.forName(Conf.HIVE.DRIVER);
-            conn = DriverManager.getConnection(Conf.HIVE.URL,Conf.HIVE.USER,Conf.HIVE.PASS);
+            Class.forName(Conf.HIVE_DRIVER);
+            conn = DriverManager.getConnection(Conf.HIVE_URL,Conf.HIVE_USER,Conf.HIVE_PASS);
         } catch (ClassNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

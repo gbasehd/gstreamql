@@ -30,12 +30,16 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
         Conf.Init();
         String cmd = hookContext.getCommand();
         StreamQLParser parser = new StreamQLParser(cmd);
-        StreamJob job = new StreamJob(parser.getStreamJobName());
-        StreamQLBuilder builder = new StreamQLBuilder(parser,job);
+        parser.parse();
+        if(!(parser.getStreamJobName() == null || parser.getStreamJobName().equals(""))) {
+            StreamJob job = new StreamJob(parser.getStreamJobName());
+            StreamQLBuilder builder = new StreamQLBuilder(parser,job);
 
-        Logger("change "+ hookContext.getCommand());
-        realRun(cmd,parser,job,builder);
-        Logger("to " + hookContext.getCommand());
+            Logger("change "+ hookContext.getCommand());
+            realRun(cmd,parser,job,builder);
+            Logger("to " + hookContext.getCommand());
+        }
+
     }
 
     //@Override
@@ -45,7 +49,6 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
 
     private void realRun(String cmd, StreamQLParser parser, StreamJob job, StreamQLBuilder builder) throws Exception {
         boolean isContinueHandle = false;
-        parser.parse();
         String myCmd = "";
         switch(parser.getCmdType()) {
             case CREATE_STREAMJOB: {
@@ -64,8 +67,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
             }
             case START_STREAMJOB: {
                 if(!job.isExists())
-                    throw new Exception("Start stream job failed! create stream job \"" +
-                                         parser.getStreamJobName() + "\" first!");
+                    throw new Exception("Start stream job failed! Stream job \"" +
+                                         parser.getStreamJobName() + "\" does not exist!");
                 if(job.isStopped()) {
                     job.start();
                     isContinueHandle = true;
@@ -76,8 +79,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
             }
             case STOP_STREAMJOB: {
                 if(!job.isExists())
-                    throw new Exception("Stop stream job failed! create stream job \"" +
-                                         parser.getStreamJobName() + "\" first!");
+                    throw new Exception("Stop stream job failed! Stream job \"" +
+                                        parser.getStreamJobName() + "\" does not exist!");
                 if(job.isRunning()) {
                     job.stop();
                     isContinueHandle = true;
@@ -88,8 +91,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
             }
             case DROP_STREAMJOB: {
                 if(!job.isExists())
-                    throw new Exception("Drop stream job failed! create stream job \"" +
-                                         parser.getStreamJobName() + "\" first!");
+                    throw new Exception("Drop stream job failed! Stream job \"" +
+                                        parser.getStreamJobName() + "\" does not exist!");
                 if(job.isStopped()) {
                     isContinueHandle = true;
                 } else {
@@ -109,7 +112,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook {
     }
 
     private void Logger(String output) {
-        if(Conf.SYS.IS_DEBUG)
+        if(Conf.SYS_IS_DEBUG)
             System.out.print(output);
     }
 
