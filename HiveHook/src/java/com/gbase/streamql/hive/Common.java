@@ -32,3 +32,8 @@ enum FS{
     LOCAL,
     HDFS
 }
+
+enum RUNTIME_TYPE{
+    OUTPUT,
+    DERIVE
+}

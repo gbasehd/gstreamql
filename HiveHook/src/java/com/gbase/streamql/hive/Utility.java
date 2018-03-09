@@ -109,7 +109,7 @@ public class Utility {
 
     public static void Logger(String output) {
         if(Conf.SYS_IS_DEBUG)
-            System.out.print(output);
+            System.out.print(output + "\n");
     }
 
     public static String COL_BEGIN = "begin1";
@@ -121,10 +121,15 @@ public class Utility {
         Connection conn = HiveService.getConn();
         Statement stmt  = HiveService.getStmt(conn);
         String sql = "insert into " + Conf.SYS_DB + ".tmp(" + COL_BEGIN + ", " + COL_END + ", " + COL_RUNTIME_TYPE + ", " + COL_SQL + ") values (\""
+        //String sql = "insert into tmp(" + COL_BEGIN + ", " + COL_END + ", " + COL_RUNTIME_TYPE + ", " + COL_SQL + ") values (\""
                 + edgeInfo.get(COL_BEGIN) + "\", \""
                 + edgeInfo.get(COL_END) + "\", \""
                 + edgeInfo.get(COL_RUNTIME_TYPE) + "\", \""
                 + edgeInfo.get(COL_SQL) + "\")";
         stmt.execute(sql);
+        //stmt.execute("show tables");
+        Utility.Logger("\nSQL:" + sql);
+        HiveService.closeStmt(stmt);
+        HiveService.closeConn(conn);
     }
 }

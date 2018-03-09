@@ -40,9 +40,9 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook{
         }
 
         //for stream manage
-        Logger("change "+ hookContext.getCommand());
+        Logger("change \""+ hookContext.getCommand() + "\" ");
         Utility.setCmd(cmd, parser.getTransformSql());
-        Logger("to " + hookContext.getCommand());
+        Logger("to \"" + hookContext.getCommand() + "\" ");
     }
 
     //@Override
