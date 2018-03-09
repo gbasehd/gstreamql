@@ -1,74 +1,86 @@
 package com.gbase.streamql.hive;
 
-import java.util.Arrays;
-import java.util.HashSet;
+
+
+import java.util.*;
 
 public class StreamJobPlan {
 
-    private String[] inputName;
+    private String[] inputNames;
     private String outputName;
-    private String planContent;
+    private String plan;
+    private Stack<String> jsonStrStack ; // Save the generated json string according to plan
     private int count;
 
-    public StreamJobPlan(String[] inputName, String outputName){
-        this.inputName = inputName;
+    public StreamJobPlan(String[] inputNames, String outputName){
+        this.inputNames = inputNames;
         this.outputName = outputName;
-        count = 0;
-        planContent = "";
+        this.count = 0;
+        this.plan = "";
+        this.jsonStrStack = new Stack<String>();
     }
 
-    public String getContent() throws Exception {
-        StreamRelation relation = new StreamRelation();
-        String planContent = "";
-
-        if(relation.isOutput(this.outputName)) {
-            HashSet<String> allInputs = new HashSet<String>();
-            allInputs = getLeaves(this.outputName);
-            String[] allInputsArr = new String[allInputs.size()];
-            allInputsArr = allInputs.toArray(allInputsArr);
-            Arrays.sort(allInputsArr);
-            Arrays.sort(inputName);
-            if (Arrays.equals(allInputsArr, inputName)) {
-                planContent = this.planContent;
+    public String getJson() throws Exception{
+        String jsonStr = new String();
+        if(!jsonStrStack.empty()) {
+            /*
+            for(int j = 0 ; j < this.inputNames.length; j++){
+                jsonStr += this.inputNames[j] + "\r\n";
             }
-            else {
+            */
+            Stack<String> tmp =  new Stack<String>();
+            tmp = (Stack<String>)this.jsonStrStack.clone();
+            jsonStr = jsonHead();
+            while(!tmp.empty()){
+                jsonStr += tmp.pop() + "\r\n";
+            }
+            jsonStr += jsonTail();
+        }
+        else{
+            throw new Exception(String.format("Must first execute function StreamJobPlan.generate() to get json string"));
+        }
+        return jsonStr;
+    }
+
+    public String print() throws Exception{
+        String str = new String();
+        if(!this.plan.isEmpty()){
+            str = this.plan;
+        }
+        else{
+            throw new Exception(String.format("Must first execute function StreamJobPlan.generate() to get plan content"));
+        }
+        return this.plan;
+    }
+
+    public void generate() throws Exception {
+        StreamRelation relation = new StreamRelation();
+        String content = "";
+        if(relation.isOutput(this.outputName)) {
+            HashSet<String> realInputNames = new HashSet<String>();
+            realInputNames = getLeaves(this.outputName); //Traversing plan while generating json string
+            if(!equals(this.inputNames,realInputNames)){
                 throw new Exception(String.format("The input stream \'%s\' cannot match", getInputNames()));
+            }
+            else{
+                this.jsonStrStack.push(jsonInputTail());
+                for(int i = 0; i < this.inputNames.length; i++){
+                    this.jsonStrStack.push(jsonFormatInput(this.inputNames[i],i));
+                }
+                this.jsonStrStack.push(jsonInputHead());
             }
         }
         else {
             throw new Exception(String.format("The output stream \'%s\' does not exist", this.outputName));
         }
-        return planContent;
-    }
-
-    private void addPlanContent(String name){
-        this.planContent += "[" + this.count +"]";
-        this.planContent += name;
-        this.planContent += "->";
-    }
-    private void markeInput(String name){
-        this.planContent += "[" + this.count +"]";
-        this.planContent += name;
-        this.planContent += "(end) ";
-        this.count++;
-    }
-
-    private  String getInputNames()
-    {
-        String inputNames = "";
-        for(int i = 0 ; i < this.inputName.length-1; i++){
-            inputNames += this.inputName[i];
-            inputNames += ", ";
-        }
-        inputNames += this.inputName[this.inputName.length-1];
-        return inputNames;
     }
 
     private HashSet<String> getLeaves(String root){
         HashSet<String> leaves = new HashSet<String>();
         StreamRelation relation = new StreamRelation();
         if(relation.hasPrev(root)) {
-            addPlanContent(root);
+            savePlan(root);
+            addContent(root);
             String[] prevs = relation.getPrev(root);
             for(int i = 0; i < prevs.length; i++) {
                 HashSet<String> branchLeaves = getLeaves(prevs[i]);
@@ -81,5 +93,173 @@ public class StreamJobPlan {
         }
         return leaves;
     }
+
+    private boolean equals(String[] source , HashSet<String> target ){
+        String[] targetArr = new String[target.size()];
+        targetArr = target.toArray(targetArr);
+        Arrays.sort(source);
+        Arrays.sort(targetArr);
+        boolean isEqual = false;
+        if(Arrays.equals(source,targetArr)){
+           isEqual = true;
+        }
+        return isEqual;
+    }
+
+
+    private void savePlan(String name){
+        this.plan += "[" + this.count +"]";
+        this.plan += name;
+        this.plan += "->";
+    }
+
+    private void addContent(String name){
+        StreamRelation relation = new StreamRelation();
+        if(relation.isOutput(name)) {
+            this.jsonStrStack.push(jsonOutputTail());
+            this.jsonStrStack.push(jsonFormatOutput(name));
+            this.jsonStrStack.push(jsonOutputHead());
+            this.jsonStrStack.push(jsonFormatSql(name));
+        }
+        else{
+            if(relation.hasSql(name)){
+                this.jsonStrStack.push(jsonFormatSql(name));
+            }
+        }
+    }
+
+    private String jsonFormatInput(String name, int count){
+        String jsonFormatStr = new String();
+        int base =3;
+        jsonFormatStr = repeat("\t",base) + "{\r\n";
+        jsonFormatStr += repeat("\t",base+1) + "\"format\": \"kafka9\",\r\n";
+        jsonFormatStr += repeat("\t",base+1) + "\"outputTable\": \"" + name + "\",\r\n";
+        jsonFormatStr += repeat("\t",base+1) + "\"kafka.bootstrap.servers\": \"127.0.0.1:9092\",\r\n";
+        jsonFormatStr += repeat("\t",base+1) + "\"topics\": \"test\",\r\n";
+        jsonFormatStr += repeat("\t",base+1) + "\"path\": \"-\"\r\n";
+        if(count > 0 ) {
+            jsonFormatStr += repeat("\t",base) + "},\r";
+        }
+        else{
+            jsonFormatStr += repeat("\t",base) + "}\r";
+        }
+        return jsonFormatStr;
+    }
+
+    private String jsonInputHead(){
+        String head = new String();
+        int base = 2;
+        head = repeat("\t",base) + "{\r\n";
+        head += repeat("\t",base+1) + "\"name\": \"flink.sources\",\r\n";
+        head += repeat("\t",base+1) + "\"params\": [\r";
+        return head;
+    }
+
+    private String jsonInputTail(){
+        String tail = new String();
+        int base = 2;
+        tail += repeat("\t",base+1) + "]\r\n";
+        tail += repeat("\t",base) + "},\r";
+        return tail;
+    }
+
+    private String jsonFormatSql(String name){
+        String jsonFormatStr = new String();
+        StreamRelation relation = new StreamRelation();
+        int base = 2;
+        jsonFormatStr = repeat("\t", base) + "{\r\n";
+        jsonFormatStr +=repeat("\t", base+1) + "\"name\": \"flink.sql\",\r\n";
+        jsonFormatStr +=repeat("\t", base+1) +  "\"params\": [\r\n";
+        jsonFormatStr +=repeat("\t", base+1) + "{\r\n";
+        jsonFormatStr +=repeat("\t", base+2) + "\"sql\": \"" + relation.getSql(name) + "\",\r\n";
+        jsonFormatStr +=repeat("\t", base+2) + "\"outputTableName\": \"" + name + "\"\r\n";
+        jsonFormatStr +=repeat("\t", base+1) + "}\r\n";
+        jsonFormatStr +=repeat("\t", base+1) + "]\r\n";
+        jsonFormatStr +=repeat("\t", base) + "},\r";
+        return jsonFormatStr;
+    }
+
+    private String jsonFormatOutput(String name){
+        String jsonFormatStr = new String();
+        int base = 3;
+        jsonFormatStr += repeat("\t", base) + "{\r\n";
+        jsonFormatStr += repeat("\t", base+1) + "\"mode\": \"append\",\r\n";
+        jsonFormatStr += repeat("\t", base+1) + "\"format\": \"kafka8\",\r\n";
+        jsonFormatStr += repeat("\t", base+1) + "\"metadata.broker.list\":\"127.0.0.1:9092\",\r\n";
+        jsonFormatStr += repeat("\t", base+1) + "\"topics\":\"test2\",\r\n";
+        jsonFormatStr += repeat("\t", base+1) + "\"inputTableName\": \""+name+"\"\r\n";
+        jsonFormatStr += repeat("\t", base) + "}\r";
+        return jsonFormatStr;
+    }
+
+    private String repeat(String str, int count){
+        String repeated = "";
+        for(int i = 0; i < count; i++){
+           repeated += str;
+        }
+        return repeated;
+    }
+
+    private String jsonOutputHead() {
+        String head = new String();
+        int base=2;
+        head = repeat("\t",base) + "{\r\n";
+        head += repeat("\t",base+1) +  "\"name\": \"flink.outputs\",\r\n";
+        head += repeat("\t",base+1) + "\"params\": [\r";
+        return head;
+    }
+
+    private String jsonOutputTail() {
+        String tail = new String();
+        int base = 2;
+        tail = repeat("\t",base+1) + "]\r\n";
+        tail += repeat("\t",base) + "}\r";
+        return tail;
+    }
+
+    private String jsonHead(){
+        String head = new String();
+        int base = 0;
+        head = repeat("\t",base) + "{\r\n";
+        head += repeat("\t",base+1) + "\"flink-example\": {\r\n";
+        head += repeat("\t",base+2) + "\"desc\": \"测试\",\r\n";
+        head += repeat("\t",base+2) + "\"strategy\": \"flink\",\r\n";
+        head += repeat("\t",base+2) + "\"algorithm\": [],\r\n";
+        head += repeat("\t",base+2) + "\"ref\": [],\r\n";
+        head += repeat("\t",base+2) + "\"compositor\": [\r\n";
+        return head;
+    }
+
+    private  String jsonTail(){
+        String tail = new String();
+        int base = 0;
+        tail = repeat("\t",base+2) + "],\r\n";
+        tail += repeat("\t",base+2) + "\"configParams\": {\r\n";
+        tail += repeat("\t",base+2) + "}\r\n";
+        tail += repeat("\t",base+1) + "}\r\n";
+        tail += repeat("\t",base) + "}\r";
+        return tail;
+    }
+
+    private void markeInput(String name){
+        this.plan += "[" + this.count +"]";
+        this.plan += name;
+        this.plan += "(end) ";
+        this.count++;
+    }
+
+
+    private  String getInputNames()
+    {
+        String inputNames = "";
+        for(int i = 0 ; i < this.inputNames.length-1; i++){
+            inputNames += this.inputNames[i];
+            inputNames += ", ";
+        }
+        inputNames += this.inputNames[this.inputNames.length-1];
+        return inputNames;
+    }
+
+
 }
 
