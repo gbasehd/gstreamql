@@ -14,10 +14,13 @@ public class StreamQLBuilder {
         String sql = "";
         switch (parser.getCmdType()) {
             case CREATE_STREAMJOB: {
+                //get plan
+                String hdfsFilePath = Utility.uploadHdfsFile(Utility.getPlan(this.parser.getStreamOutput()));
                 sql = "Insert into " +
                        Conf.SYS_DB + ".streamjobmgr(name, pid, jobid, status, define) values ('" +
                        this.parser.getStreamJobName() + "',NULL,NULL,'STOPPED','" +
-                       this.parser.getStreamJobDef() + "')";
+                        hdfsFilePath + "')";
+                Utility.Logger("SQL:" + sql);
                 break;
             }
             case SHOW_STREAMJOBS: {

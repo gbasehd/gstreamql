@@ -132,4 +132,31 @@ public class Utility {
         HiveService.closeStmt(stmt);
         HiveService.closeConn(conn);
     }
+
+    public static String uploadHdfsFile(String fileContent) {
+        Process pro = null;
+        String tmpFilePath = Conf.SYS_JSON_DIR + "/tmpHdfsFile.txt" + System.currentTimeMillis();
+        try {
+            FileWriter fw = new FileWriter(tmpFilePath, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(fileContent);// 往已有的文件上添加字符串
+            bw.close();
+            fw.close();
+
+            pro = Runtime.getRuntime().exec(new String[]{"sh", Conf.SYS_JSON_DIR + "/flink-prepare.sh", tmpFilePath});
+            pro.waitFor();
+            Logger("\n&&&upload HdfsFile:" + tmpFilePath + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return tmpFilePath;
+    }
+
+    public static String getPlan(String outputName) {
+        return "PLAN_PLAN_PLAN";
+    }
+
 }
