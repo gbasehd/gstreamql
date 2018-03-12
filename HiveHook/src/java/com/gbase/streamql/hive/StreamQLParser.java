@@ -1,8 +1,12 @@
 package com.gbase.streamql.hive;
+
+import java.sql.SQLException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Map;
 import java.util.HashMap;
+import org.apache.hadoop.hive.ql.parse.*;
+import org.apache.hadoop.hive.ql.session.SessionState;
 
 public class StreamQLParser {
 
@@ -145,6 +149,52 @@ public class StreamQLParser {
                     break;
                 } else if (matcherInsertSth.matches()) {
                     this.cmdType = CMD.INSERT_STREAM;
+
+                    // eg. insert into a select b;
+                    ParseDriver pd = new ParseDriver();
+                    ASTNode astNode = null;
+                    try {
+                        astNode = (ASTNode) pd.parse(cmd).getChild(0);
+                        if(astNode != null
+                                && astNode.getToken().getType() == HiveParser.TOK_QUERY
+                                && astNode.getChildCount() == 2
+                                && astNode.getChild(0).getType() == HiveParser.TOK_FROM
+                                && astNode.getChild(1).getType() == HiveParser.TOK_INSERT) {
+                            //simple insert select
+                            // eg. insert into a select b;
+                            SessionState ss = SessionState.get();
+                            Map<String, String> hiveVars = ss.getHiveVariables();
+
+                            StringBuilder inputStreams = new StringBuilder();
+                            StringBuilder outputStreams = new StringBuilder();
+                            //simple insert select
+                            // eg. insert into a select b;
+
+                            //input
+                            getTableList(astNode.getChild(0).toStringTree(), inputStreams);
+                            getTableList(astNode.getChild(1).toStringTree(), outputStreams);
+                            hiveVars.put("IS_STREAM_SQL", null);
+                            hiveVars.put("INPUT_STREAMS", inputStreams.toString());
+                            hiveVars.put("OUTPUT_STREAMS", outputStreams.toString());
+                            hiveVars.put("RUN_TIME_TYPE", "OUTPUT_STREAM");
+                            hiveVars.put("ORG_SQL", new String(cmd));
+                            Utility.Logger("INPUT_STREAMS:" + inputStreams.toString());
+                            Utility.Logger("OUTPUT_STREAMS:" + outputStreams.toString());
+                            Utility.Logger("ORG_SQL:" + hiveVars.get("ORG_SQL"));
+
+                            if(!outputStreams.toString().equals("")) {
+                                String sql = "select 0 from " + inputStreams + outputStreams.substring(0, outputStreams.length() - 1) + " limit 1";
+                                this.cmd = sql;
+                            }
+                        }
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+
+
+
+
+
                     break;
                 }
             }
@@ -158,4 +208,24 @@ public class StreamQLParser {
     public String getStreamJobDef(){ return mapCmdParams.get(STREAM_JOB_DEF); }
     public String getTransformSql() { return this.cmd; }
     public CMD getCmdType() {return this.cmdType; }
+
+
+    /**
+     * 递归截取字符串获取表名
+     * @param strTree
+     * @return
+     */
+    private void getTableList(String strTree, StringBuilder tabNames){
+        int i1 = strTree.indexOf("tok_tabname");
+        String substring1 = "";
+        String substring2 = "";
+        if(i1>0){
+            substring1 = strTree.substring(i1+12);
+            int i2 = substring1.indexOf(")");
+            substring2 = substring1.substring(0,i2);
+            System.out.println(substring2);
+            tabNames.append(substring2).append(",");
+            getTableList(substring1, tabNames);
+        }
+    }
 }
