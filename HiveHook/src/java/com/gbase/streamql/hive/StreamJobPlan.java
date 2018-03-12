@@ -3,21 +3,31 @@ package com.gbase.streamql.hive;
 
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 public class StreamJobPlan {
 
     private String[] inputNames;
     private String outputName;
     private String plan;
-    private Stack<String> jsonStrStack ; // Save the generated json string according to plan
+    private Stack<String> jsonStrStack = new Stack<String>() ; // Save the generated json string according to plan
     private int count;
+    private StreamRelation relation;
 
     public StreamJobPlan(String[] inputNames, String outputName){
         this.inputNames = inputNames;
         this.outputName = outputName;
         this.count = 0;
         this.plan = "";
-        this.jsonStrStack = new Stack<String>();
+        this.relation = new StreamRelation();
+    }
+
+    public StreamJobPlan(StreamRelation r,String[] inputNames, String outputName){
+        this.inputNames = inputNames;
+        this.outputName = outputName;
+        this.count = 0;
+        this.plan = "";
+        this.relation = r;
     }
 
     public String getJson() throws Exception{
@@ -54,9 +64,8 @@ public class StreamJobPlan {
     }
 
     public void generate() throws Exception {
-        StreamRelation relation = new StreamRelation();
         String content = "";
-        if(relation.isOutput(this.outputName)) {
+        if(this.relation.isOutput(this.outputName)) {
             HashSet<String> realInputNames = new HashSet<String>();
             realInputNames = getLeaves(this.outputName); //Traversing plan while generating json string
             if(!equals(this.inputNames,realInputNames)){
@@ -75,13 +84,12 @@ public class StreamJobPlan {
         }
     }
 
-    private HashSet<String> getLeaves(String root){
+    private HashSet<String> getLeaves (String root) throws Exception{
         HashSet<String> leaves = new HashSet<String>();
-        StreamRelation relation = new StreamRelation();
-        if(relation.hasPrev(root)) {
+        if(this.relation.hasPrev(root)) {
             savePlan(root);
             addContent(root);
-            String[] prevs = relation.getPrev(root);
+            String[] prevs = this.relation.getPrev(root);
             for(int i = 0; i < prevs.length; i++) {
                 HashSet<String> branchLeaves = getLeaves(prevs[i]);
                 leaves.addAll(branchLeaves);
@@ -113,16 +121,15 @@ public class StreamJobPlan {
         this.plan += "->";
     }
 
-    private void addContent(String name){
-        StreamRelation relation = new StreamRelation();
-        if(relation.isOutput(name)) {
+    private void addContent(String name) throws Exception {
+        if(this.relation.isOutput(name)) {
             this.jsonStrStack.push(jsonOutputTail());
             this.jsonStrStack.push(jsonFormatOutput(name));
             this.jsonStrStack.push(jsonOutputHead());
             this.jsonStrStack.push(jsonFormatSql(name));
         }
         else{
-            if(relation.hasSql(name)){
+            if(this.relation.hasSql(name)){
                 this.jsonStrStack.push(jsonFormatSql(name));
             }
         }
@@ -163,15 +170,14 @@ public class StreamJobPlan {
         return tail;
     }
 
-    private String jsonFormatSql(String name){
+    private String jsonFormatSql(String name) throws Exception{
         String jsonFormatStr = new String();
-        StreamRelation relation = new StreamRelation();
         int base = 2;
         jsonFormatStr = repeat("\t", base) + "{\r\n";
         jsonFormatStr +=repeat("\t", base+1) + "\"name\": \"flink.sql\",\r\n";
         jsonFormatStr +=repeat("\t", base+1) +  "\"params\": [\r\n";
         jsonFormatStr +=repeat("\t", base+1) + "{\r\n";
-        jsonFormatStr +=repeat("\t", base+2) + "\"sql\": \"" + relation.getSql(name) + "\",\r\n";
+        jsonFormatStr +=repeat("\t", base+2) + "\"sql\": \"" + this.relation.getSql(name) + "\",\r\n";
         jsonFormatStr +=repeat("\t", base+2) + "\"outputTableName\": \"" + name + "\"\r\n";
         jsonFormatStr +=repeat("\t", base+1) + "}\r\n";
         jsonFormatStr +=repeat("\t", base+1) + "]\r\n";
