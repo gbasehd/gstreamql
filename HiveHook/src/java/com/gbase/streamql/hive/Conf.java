@@ -1,6 +1,7 @@
 package com.gbase.streamql.hive;
 
 public class Conf {
+
     //public class System{
         public static String SYS_DB = "mjw";
         public static String SYS_JSON_DIR = "/home/mjw";
@@ -22,6 +23,7 @@ public class Conf {
     //public System SYS = new System();
     //public static Hive HIVE;
     //public static Job JOB;
+
 
     public static void Init(){
        //TODO
