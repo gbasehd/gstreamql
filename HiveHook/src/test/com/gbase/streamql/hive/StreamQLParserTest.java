@@ -1,13 +1,17 @@
 package com.gbase.streamql.hive;
 
+import org.apache.hadoop.hive.ql.session.SessionState;
+import org.easymock.EasyMock;
 import org.junit.Test;
+
+import java.util.HashMap;
 
 import static org.junit.Assert.*;
 
 public class StreamQLParserTest {
 
     //stremjob management
-    String createSql = "CREATE STREAMJOB db.streamTest TBLPROPERTIES (\"jobdef\"=\"/streamingPro/flink.json\")";
+    String createSql = "CREATE STREAMJOB db.streamTest TBLPROPERTIES (\"output\"=\"/streamingPro/flink.json\")";
     String showSql = "SHOW STREAMJOBS";
     String startSql = "START STREAMJOB db.streamTest";
     String stopSql = "stop streamjob db.streamTest";
@@ -18,14 +22,17 @@ public class StreamQLParserTest {
     StreamQLParser stopSqlParser = new StreamQLParser(stopSql);
     StreamQLParser dropSqlParser = new StreamQLParser(dropSql);
     //stream management
-    StreamQLParser createStreamSqlParser = new StreamQLParser("CREATE STREAM db.streamTest(a int) TBLPROPERTIES (\"testKey\"=\"\testValue\\a.txt\")");
+    StreamQLParser createStreamSqlParser = new StreamQLParser("CREATE STREAM db.streamTest(a int) TBLPROPERTIES (\"testKey\"=\"testValue\\a.txt\")");
     StreamQLParser showStreamSqlParser = new StreamQLParser("SHOW STREAMS");
     StreamQLParser dropStreamSqlParser = new StreamQLParser("DROP STREAM db.streamTest");
-    StreamQLParser insertSelectSqlParser = new StreamQLParser("INSERT INTO db.output SELECT db.col, db.col2 FROM db.input STREAMWINDOW win AS (LENGTH 1 SECOND SLIDE 1 SECOND)");
+    StreamQLParser insertSelectSqlWinParser = new StreamQLParser("INSERT INTO db.output SELECT db.col, db.col2 FROM db.input STREAMWINDOW win AS (LENGTH 1 SECOND SLIDE 1 SECOND)");
+    StreamQLParser insertSelectSqlNormal1Parser = new StreamQLParser("INSERT INTO db.output SELECT db.col, db.col2 FROM db.input");
+    StreamQLParser insertSelectSqlNormal2Parser = new StreamQLParser("INSERT INTO db.output SELECT db.col, db.col2 FROM db.input join db.input2 as b");
     //StreamQLParser insertSelectSqlParser = new StreamQLParser("INSERT INTO db.output SELECT * FROM db.input STREAMWINDOW win AS (LENGTH 1 SECOND SLIDE 1 SECOND)");
     //grant management
     
-    private void init() {
+    @Test
+    public void init() throws Exception {
         createSqlParser.parse();
         showSqlParser.parse();
         startSqlParser.parse();
@@ -52,27 +59,27 @@ public class StreamQLParserTest {
     @Test
     public void getStreamJobName() throws Exception {
         init();
-        assertEquals(createSqlParser.getStreamJobName(), "streamTest");
+        assertEquals(createSqlParser.getStreamJobName(), "db.streamTest");
         assertEquals(showSqlParser.getStreamJobName(), null);
-        assertEquals(startSqlParser.getStreamJobName(), "streamTest");
-        assertEquals(stopSqlParser.getStreamJobName(), "streamTest");
-        assertEquals(dropSqlParser.getStreamJobName(), "streamTest");
+        assertEquals(startSqlParser.getStreamJobName(), "db.streamTest");
+        assertEquals(stopSqlParser.getStreamJobName(), "db.streamTest");
+        assertEquals(dropSqlParser.getStreamJobName(), "db.streamTest");
         assertEquals(createStreamSqlParser.getStreamJobName(), null);
         assertEquals(showStreamSqlParser.getStreamJobName(), null);
         assertEquals(dropStreamSqlParser.getStreamJobName(), null);
     }
 
     @Test
-    public void getStreamJobDef() throws Exception {
+    public void getStreamOutput() throws Exception {
         init();
-        assertEquals(createSqlParser.getStreamJobDef(), "/streamingPro/flink.json");
-        assertEquals(showSqlParser.getStreamJobDef(), null);
-        assertEquals(startSqlParser.getStreamJobDef(), null);
-        assertEquals(stopSqlParser.getStreamJobDef(), null);
-        assertEquals(dropSqlParser.getStreamJobDef(), null);
-        assertEquals(createStreamSqlParser.getStreamJobDef(), null);
-        assertEquals(showStreamSqlParser.getStreamJobDef(), null);
-        assertEquals(dropStreamSqlParser.getStreamJobDef(), null);
+        assertEquals(createSqlParser.getStreamOutput(), "/streamingPro/flink.json");
+        assertEquals(showSqlParser.getStreamOutput(), null);
+        assertEquals(startSqlParser.getStreamOutput(), null);
+        assertEquals(stopSqlParser.getStreamOutput(), null);
+        assertEquals(dropSqlParser.getStreamOutput(), null);
+        assertEquals(createStreamSqlParser.getStreamOutput(), null);
+        assertEquals(showStreamSqlParser.getStreamOutput(), null);
+        assertEquals(dropStreamSqlParser.getStreamOutput(), null);
     }
 
     @Test
@@ -83,8 +90,18 @@ public class StreamQLParserTest {
         assertEquals(startSqlParser.getTransformSql(), startSql);
         assertEquals(stopSqlParser.getTransformSql(), stopSql);
         assertEquals(dropSqlParser.getTransformSql(), dropSql);
-        assertEquals(createStreamSqlParser.getTransformSql(), "CREATE TABLE streamTest(a int) TBLPROPERTIES (\"testKey\"=\"testValue\")");
+        assertEquals(createStreamSqlParser.getTransformSql(), "CREATE TABLE db.streamTest(a int) TBLPROPERTIES (\"testKey\"=\"testValue\\a.txt\")");
         assertEquals(showStreamSqlParser.getTransformSql(), "SHOW TABLES");
-        assertEquals(dropStreamSqlParser.getTransformSql(), "DROP TABLE streamTest");
+        assertEquals(dropStreamSqlParser.getTransformSql(), "DROP TABLE db.streamTest");
+    }
+
+    @Test
+    public void getTableList() throws Exception {
+        init();
+        String sql = "mjw) bb) (tok_tabref (tok_tabname mjw cc))))";
+        String sql2 = "(tok_from (tok_join (tok_tabref (tok_tabname mjw) bb) (tok_tabref (tok_tabname mjw cc))))";
+        StringBuilder builder = new StringBuilder();
+        createSqlParser.getTableList(sql, builder);
+        System.out.print(builder.toString());
     }
 }

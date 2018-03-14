@@ -30,19 +30,18 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook{
         String cmd = hookContext.getCommand();
         StreamQLParser parser = new StreamQLParser(cmd);
         parser.parse();
-        if(!(parser.getStreamJobName() == null || parser.getStreamJobName().equals(""))) {
-            StreamJob job = new StreamJob(parser.getStreamJobName());
-            StreamQLBuilder builder = new StreamQLBuilder(parser,job);
 
-            Logger("change "+ hookContext.getCommand() + " \n");
+        Utility.Logger("STEP INTO PRE DRIVER RUN");
+        Utility.Logger("CMD TYPE:" + parser.getCmdType());
+        StreamJob job = null;
+        if (parser.getTransformSql() != null) {
+            if(parser.getStreamJobName() != null && !parser.getStreamJobName().equals(""))
+                job = new StreamJob(parser.getStreamJobName());
+            StreamQLBuilder builder = new StreamQLBuilder(parser, job);
+            Logger("change " + hookContext.getCommand() + " \n");
             realRun(cmd,parser,job,builder);
             Logger("to " + hookContext.getCommand() + "\n");
         }
-
-        //for stream manage
-        Logger("change \""+ hookContext.getCommand() + "\" ");
-        Utility.setCmd(cmd, parser.getTransformSql());
-        Logger("to \"" + hookContext.getCommand() + "\" ");
     }
 
     //@Override
@@ -103,6 +102,12 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook{
                 }
                 break;
             }
+            case CREATE_STREAM:
+            case SHOW_STREAMS:
+            case DROP_STREAM:
+            case INSERT_STREAM:
+                isContinueHandle = true;
+                break;
             case UNMATCHED:
                 break;
             default:

@@ -47,7 +47,7 @@ public class StreamQLSemanticAnalyzerHook implements HiveSemanticAnalyzerHook {
             //sql
             edgeInfo.put(Utility.COL_SQL, hiveVars.get("ORG_SQL"));
             try {
-                Utility.edgePersist(edgeInfo);
+                    Utility.edgePersist(edgeInfo);
                 clearSession();
             } catch (SQLException e) {
                 e.printStackTrace();

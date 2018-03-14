@@ -20,7 +20,7 @@ public class StreamQLBuilderTest {
 
         /*****CREATE_STREAMJOB*************/
         EasyMock.expect(parser.getStreamJobName()).andReturn("streamtest");
-        EasyMock.expect(parser.getStreamJobDef()).andReturn("/streamingPro/flink.json");
+        EasyMock.expect(parser.getStreamOutput()).andReturn("/streamingPro/flink.json");
         EasyMock.expect(parser.getCmdType()).andReturn(CMD.CREATE_STREAMJOB);
         EasyMock.replay(parser);
         //new builder
@@ -33,7 +33,7 @@ public class StreamQLBuilderTest {
         /*************SHOW_STREAMJOBS*************/
         EasyMock.reset(parser);
         EasyMock.expect(parser.getStreamJobName()).andReturn("streamtest");
-        EasyMock.expect(parser.getStreamJobDef()).andReturn("/streamingPro/flink.json");
+        EasyMock.expect(parser.getStreamOutput()).andReturn("/streamingPro/flink.json");
         EasyMock.expect(parser.getCmdType()).andReturn(CMD.SHOW_STREAMJOBS);
         EasyMock.replay(parser);
         //new builder
@@ -44,7 +44,7 @@ public class StreamQLBuilderTest {
         /*************START_STREAMJOB*************/
         EasyMock.reset(parser);
         EasyMock.expect(parser.getStreamJobName()).andReturn("streamtest");
-        EasyMock.expect(parser.getStreamJobDef()).andReturn("/streamingPro/flink.json");
+        EasyMock.expect(parser.getStreamOutput()).andReturn("/streamingPro/flink.json");
         EasyMock.expect(parser.getCmdType()).andReturn(CMD.START_STREAMJOB);
         EasyMock.replay(parser);
 
@@ -60,7 +60,7 @@ public class StreamQLBuilderTest {
         /*************STOP_STREAMJOB*************/
         EasyMock.reset(parser);
         EasyMock.expect(parser.getStreamJobName()).andReturn("streamtest");
-        EasyMock.expect(parser.getStreamJobDef()).andReturn("/streamingPro/flink.json");
+        EasyMock.expect(parser.getStreamOutput()).andReturn("/streamingPro/flink.json");
         EasyMock.expect(parser.getCmdType()).andReturn(CMD.STOP_STREAMJOB);
         EasyMock.replay(parser);
         //new builder
@@ -72,7 +72,7 @@ public class StreamQLBuilderTest {
         /*************DROP_STREAMJOB*************/
         EasyMock.reset(parser);
         EasyMock.expect(parser.getStreamJobName()).andReturn("streamtest");
-        EasyMock.expect(parser.getStreamJobDef()).andReturn("/streamingPro/flink.json");
+        EasyMock.expect(parser.getStreamOutput()).andReturn("/streamingPro/flink.json");
         EasyMock.expect(parser.getCmdType()).andReturn(CMD.DROP_STREAMJOB);
         EasyMock.replay(parser);
         //new builder

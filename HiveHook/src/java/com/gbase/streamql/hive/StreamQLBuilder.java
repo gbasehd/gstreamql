@@ -46,9 +46,13 @@ public class StreamQLBuilder {
                         Conf.SYS_DB +".streamjobmgr where  name = \"" + this.parser.getStreamJobName() + "\"";
                 break;
             }
+            case CREATE_STREAM:
+            case SHOW_STREAMS:
+            case DROP_STREAM:
+            case INSERT_STREAM:
             case UNMATCHED:
-                break;
             default:
+                sql = parser.getTransformSql();
                 break;
         }
         return sql;
