@@ -16,7 +16,7 @@ public class StreamQLBuilder {
             case CREATE_STREAMJOB: {
                 //get plan
                 String[] inputs = this.parser.getStreamInput().split(",");
-                StreamJobPlan plan = new StreamJobPlan(null, inputs, parser.getStreamOutput());
+                StreamJobPlan plan = new StreamJobPlan(inputs, parser.getStreamOutput());
                 plan.generate();
                 String hdfsFilePath = Utility.uploadHdfsFile(plan.getJson());
                 sql = "Insert into " +

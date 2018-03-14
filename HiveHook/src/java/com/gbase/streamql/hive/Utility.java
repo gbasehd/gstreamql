@@ -112,15 +112,15 @@ public class Utility {
             System.out.print(output + "\n");
     }
 
-    public static String COL_BEGIN = "begin1";
-    public static String COL_END = "end1";
+    public static String COL_BEGIN = "source";
+    public static String COL_END = "dest";
     public static String COL_RUNTIME_TYPE = "runtimetype";
     public static String COL_SQL = "sql";
 
     public static void edgePersist(Map<String, String> edgeInfo) throws SQLException {
         Connection conn = HiveService.getConn();
         Statement stmt  = HiveService.getStmt(conn);
-        String sql = "insert into " + Conf.SYS_DB + ".tmp(" + COL_BEGIN + ", " + COL_END + ", " + COL_RUNTIME_TYPE + ", " + COL_SQL + ") values (\""
+        String sql = "insert into " + Conf.SYS_DB + ".relation(" + COL_BEGIN + ", " + COL_END + ", " + COL_RUNTIME_TYPE + ", " + COL_SQL + ") values (\""
         //String sql = "insert into tmp(" + COL_BEGIN + ", " + COL_END + ", " + COL_RUNTIME_TYPE + ", " + COL_SQL + ") values (\""
                 + edgeInfo.get(COL_BEGIN) + "\", \""
                 + edgeInfo.get(COL_END) + "\", \""

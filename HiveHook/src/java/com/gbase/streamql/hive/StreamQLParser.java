@@ -9,7 +9,7 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 
 public class StreamQLParser {
 
-    private String PATTERN_CREATE_STREAMJOB = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9\\.]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"input\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\",[ ]+\\\"output\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\"\\)[ ]*)$";
+    private String PATTERN_CREATE_STREAMJOB = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9\\.]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"input\\\"=\\\")([a-zA-Z0-9,/\\.]+)(\\\"[, ]+\\\"output\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\"\\)[ ]*)$";
     private String PATTERN_SHOW_STREAMJOBS = "^[ ]*SHOW[ ]+STREAMJOBS[ ]*$";
     private String PATTERN_START_STREAMJOB = "(^[ ]*start[ ]+streamjob[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
     private String PATTERN_STOP_STREAMJOB = "(^[ ]*stop[ ]+streamjob[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
