@@ -9,7 +9,7 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 
 public class StreamQLParser {
 
-    private String PATTERN_CREATE_STREAMJOB = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9\\.]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"output\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\"\\)[ ]*)$";
+    private String PATTERN_CREATE_STREAMJOB = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9\\.]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"input\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\",[ ]+\\\"output\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\"\\)[ ]*)$";
     private String PATTERN_SHOW_STREAMJOBS = "^[ ]*SHOW[ ]+STREAMJOBS[ ]*$";
     private String PATTERN_START_STREAMJOB = "(^[ ]*start[ ]+streamjob[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
     private String PATTERN_STOP_STREAMJOB = "(^[ ]*stop[ ]+streamjob[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
@@ -24,6 +24,7 @@ public class StreamQLParser {
     private String PATTERN_INSERT_sth = "^[ ]*insert[ ]+into[ ]+[a-zA-Z0-9\\.]+[ ]+select.*";
     private String STREAM_JOB_NAME = "streamJobName";
     private String STREAM_OUTPUT = "streamOutput";
+    private String STREAM_INPUT = "streamInput";
 
     private CMD cmdType;
     private Map<String, String> mapCmdParams = new HashMap<String, String>();
@@ -43,7 +44,8 @@ public class StreamQLParser {
                 Matcher matcher = pattern.matcher(cmd);
                 if(matcher.matches()) {
                     mapCmdParams.put(STREAM_JOB_NAME, matcher.group(2));
-                    mapCmdParams.put(STREAM_OUTPUT, matcher.group(4));
+                    mapCmdParams.put(STREAM_INPUT, matcher.group(4));
+                    mapCmdParams.put(STREAM_OUTPUT, matcher.group(6));
                     this.cmdType = CMD.CREATE_STREAMJOB;
                     break;
                 }
@@ -203,6 +205,7 @@ public class StreamQLParser {
     }
     public String getStreamJobName(){ return mapCmdParams.get(STREAM_JOB_NAME); }
     public String getStreamOutput(){ return mapCmdParams.get(STREAM_OUTPUT); }
+    public String getStreamInput() { return mapCmdParams.get(STREAM_INPUT); }
     public String getTransformSql() { return this.cmd; }
     public CMD getCmdType() {return this.cmdType; }
 

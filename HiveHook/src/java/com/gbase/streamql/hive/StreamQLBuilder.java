@@ -15,7 +15,10 @@ public class StreamQLBuilder {
         switch (parser.getCmdType()) {
             case CREATE_STREAMJOB: {
                 //get plan
-                String hdfsFilePath = Utility.uploadHdfsFile(Utility.getPlan(this.parser.getStreamOutput()));
+                String[] inputs = this.parser.getStreamInput().split(",");
+                StreamJobPlan plan = new StreamJobPlan(null, inputs, parser.getStreamOutput());
+                plan.generate();
+                String hdfsFilePath = Utility.uploadHdfsFile(plan.getJson());
                 sql = "Insert into " +
                        Conf.SYS_DB + ".streamjobmgr(name, pid, jobid, status, define) values ('" +
                        this.parser.getStreamJobName() + "',NULL,NULL,'STOPPED','" +
