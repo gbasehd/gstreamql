@@ -151,7 +151,7 @@ public class StreamJobPlanTest {
 
     @Test
     public void case25() throws Exception {
-        String[] input = {"i1","i2"};
+        String[] input = {"i1","i2","i3"};
         String output = "";
         StreamJobPlan plan = new StreamJobPlan(relation,input,output);
         try{
