@@ -20,7 +20,7 @@ public class StreamRelation {
         try{
             Connection conn = HiveService.getConn();
             Statement stmt  = HiveService.getStmt(conn);
-            String query = "select begin,end,type,sql from relation";
+            String query = "select source,dest,runtimeType,sql from relation";
             ResultSet res   = stmt.executeQuery(query);
             while(res.next()){
                 this.count ++;
