@@ -1,9 +1,6 @@
 package com.gbase.streamql.hive;
 
-
-
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 public class StreamJobPlan {
 
@@ -13,6 +10,7 @@ public class StreamJobPlan {
     private Stack<String> jsonStrStack = new Stack<String>() ; // Save the generated json string according to plan
     private int count;
     private StreamRelation relation;
+    private boolean isGenerated = false;
 
     public StreamJobPlan(String[] inputNames, String outputName){
         this.inputNames = inputNames;
@@ -32,19 +30,11 @@ public class StreamJobPlan {
 
     public String getJson() throws Exception{
         String jsonStr = new String();
-        if(!jsonStrStack.empty()) {
-            /*
-            for(int j = 0 ; j < this.inputNames.length; j++){
-                jsonStr += this.inputNames[j] + "\r\n";
-            }
-            */
-            Stack<String> tmp =  new Stack<String>();
-            tmp = (Stack<String>)this.jsonStrStack.clone();
-            jsonStr = jsonHead();
-            while(!tmp.empty()){
-                jsonStr += tmp.pop() + "\r\n";
-            }
-            jsonStr += jsonTail();
+        if(this.isGenerated) {
+            jsonStr = getJsonHead();
+            jsonStr += getJsonInput(this.inputNames);
+            jsonStr += getJsonSqlAndOutput();
+            jsonStr += getJsonTail();
         }
         else{
             throw new Exception(String.format("Must first execute function StreamJobPlan.generate() to get json string"));
@@ -64,19 +54,19 @@ public class StreamJobPlan {
     }
 
     public void generate() throws Exception {
-        String content = "";
+        if(this.outputName.isEmpty()){
+            throw new Exception(String.format("Output cannot be empty!"));
+        }
+        if(this.inputNames.length == 0){
+            throw new Exception(String.format("Input cannot be empty!"));
+        }
         if(this.relation.isOutput(this.outputName)) {
-            HashSet<String> realInputNames = new HashSet<String>();
-            realInputNames = getLeaves(this.outputName); //Traversing plan while generating json string
-            if(!equals(this.inputNames,realInputNames)){
-                throw new Exception(String.format("The input stream \'%s\' cannot match", getInputNames()));
+            HashSet<String> realInputNames =  getLeaves(this.outputName); //Traversing plan while generating json string
+            if(equals(this.inputNames,realInputNames)){
+                if(!this.isGenerated) this.isGenerated = true;
             }
             else{
-                this.jsonStrStack.push(jsonInputTail());
-                for(int i = 0; i < this.inputNames.length; i++){
-                    this.jsonStrStack.push(jsonFormatInput(this.inputNames[i],i));
-                }
-                this.jsonStrStack.push(jsonInputHead());
+                throw new Exception(String.format("The input stream \'%s\' cannot match", getInputNames()));
             }
         }
         else {
@@ -84,6 +74,7 @@ public class StreamJobPlan {
         }
     }
 
+    // Depth-first traversal algorithm
     private HashSet<String> getLeaves (String root) throws Exception{
         HashSet<String> leaves = new HashSet<String>();
         if(this.relation.hasPrev(root)) {
@@ -123,19 +114,37 @@ public class StreamJobPlan {
 
     private void addContent(String name) throws Exception {
         if(this.relation.isOutput(name)) {
-            this.jsonStrStack.push(jsonOutputTail());
-            this.jsonStrStack.push(jsonFormatOutput(name));
-            this.jsonStrStack.push(jsonOutputHead());
-            this.jsonStrStack.push(jsonFormatSql(name));
+            this.jsonStrStack.push(getJsonOutputTail());
+            this.jsonStrStack.push(formatJsonOutput(name));
+            this.jsonStrStack.push(getJsonOutputHead());
+            this.jsonStrStack.push(formatJsonSql(name));
         }
         else{
             if(this.relation.hasSql(name)){
-                this.jsonStrStack.push(jsonFormatSql(name));
+                this.jsonStrStack.push(formatJsonSql(name));
             }
         }
     }
 
-    private String jsonFormatInput(String name, int count){
+    private  String getJsonInput(String[] inputNames){
+        String jsonInput = getJsonInputHead();
+        for(int i = inputNames.length-1; i >= 0; i--){
+            jsonInput += formatJsonInput(inputNames[i],i);
+        }
+        jsonInput += getJsonInputTail();
+        return jsonInput;
+    }
+
+    private String getJsonInputHead(){
+        String head = new String();
+        int base = 2;
+        head = repeat("\t",base) + "{\r\n";
+        head += repeat("\t",base+1) + "\"name\": \"flink.sources\",\r\n";
+        head += repeat("\t",base+1) + "\"params\": [\r\n";
+        return head;
+    }
+
+    private String formatJsonInput(String name, int count){
         String jsonFormatStr = new String();
         int base =3;
         jsonFormatStr = repeat("\t",base) + "{\r\n";
@@ -145,32 +154,32 @@ public class StreamJobPlan {
         jsonFormatStr += repeat("\t",base+1) + "\"topics\": \"test\",\r\n";
         jsonFormatStr += repeat("\t",base+1) + "\"path\": \"-\"\r\n";
         if(count > 0 ) {
-            jsonFormatStr += repeat("\t",base) + "},\r";
+            jsonFormatStr += repeat("\t",base) + "},\r\n";
         }
         else{
-            jsonFormatStr += repeat("\t",base) + "}\r";
+            jsonFormatStr += repeat("\t",base) + "}\r\n";
         }
         return jsonFormatStr;
     }
 
-    private String jsonInputHead(){
-        String head = new String();
-        int base = 2;
-        head = repeat("\t",base) + "{\r\n";
-        head += repeat("\t",base+1) + "\"name\": \"flink.sources\",\r\n";
-        head += repeat("\t",base+1) + "\"params\": [\r";
-        return head;
-    }
-
-    private String jsonInputTail(){
+    private String getJsonInputTail(){
         String tail = new String();
         int base = 2;
         tail += repeat("\t",base+1) + "]\r\n";
-        tail += repeat("\t",base) + "},\r";
+        tail += repeat("\t",base) + "},\r\n";
         return tail;
     }
 
-    private String jsonFormatSql(String name) throws Exception{
+    private String getJsonSqlAndOutput(){
+        String jsonSqlAndOutput = new String();
+        Stack<String> tmp = (Stack<String>)this.jsonStrStack.clone();
+        while(!tmp.empty()){
+            jsonSqlAndOutput += tmp.pop() + "\r\n";
+        }
+        return jsonSqlAndOutput ;
+    }
+
+    private String formatJsonSql(String name) throws Exception{
         String jsonFormatStr = new String();
         int base = 2;
         jsonFormatStr = repeat("\t", base) + "{\r\n";
@@ -185,7 +194,16 @@ public class StreamJobPlan {
         return jsonFormatStr;
     }
 
-    private String jsonFormatOutput(String name){
+    private String getJsonOutputHead() {
+        String head = new String();
+        int base=2;
+        head = repeat("\t",base) + "{\r\n";
+        head += repeat("\t",base+1) +  "\"name\": \"flink.outputs\",\r\n";
+        head += repeat("\t",base+1) + "\"params\": [\r";
+        return head;
+    }
+
+    private String formatJsonOutput(String name){
         String jsonFormatStr = new String();
         int base = 3;
         jsonFormatStr += repeat("\t", base) + "{\r\n";
@@ -198,6 +216,14 @@ public class StreamJobPlan {
         return jsonFormatStr;
     }
 
+    private String getJsonOutputTail() {
+        String tail = new String();
+        int base = 2;
+        tail = repeat("\t",base+1) + "]\r\n";
+        tail += repeat("\t",base) + "}\r";
+        return tail;
+    }
+
     private String repeat(String str, int count){
         String repeated = "";
         for(int i = 0; i < count; i++){
@@ -206,24 +232,7 @@ public class StreamJobPlan {
         return repeated;
     }
 
-    private String jsonOutputHead() {
-        String head = new String();
-        int base=2;
-        head = repeat("\t",base) + "{\r\n";
-        head += repeat("\t",base+1) +  "\"name\": \"flink.outputs\",\r\n";
-        head += repeat("\t",base+1) + "\"params\": [\r";
-        return head;
-    }
-
-    private String jsonOutputTail() {
-        String tail = new String();
-        int base = 2;
-        tail = repeat("\t",base+1) + "]\r\n";
-        tail += repeat("\t",base) + "}\r";
-        return tail;
-    }
-
-    private String jsonHead(){
+    private String getJsonHead(){
         String head = new String();
         int base = 0;
         head = repeat("\t",base) + "{\r\n";
@@ -236,7 +245,7 @@ public class StreamJobPlan {
         return head;
     }
 
-    private  String jsonTail(){
+    private  String getJsonTail(){
         String tail = new String();
         int base = 0;
         tail = repeat("\t",base+2) + "],\r\n";

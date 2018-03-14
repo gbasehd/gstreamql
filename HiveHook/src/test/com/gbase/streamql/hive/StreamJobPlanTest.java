@@ -135,4 +135,32 @@ public class StreamJobPlanTest {
         }
     }
 
+    @Test
+    public void case24() throws Exception {
+        String[] input = {};
+        String output = "s";
+        StreamJobPlan plan = new StreamJobPlan(relation,input,output);
+        try{
+            plan.generate();
+        }
+        catch (Exception e){
+            System.out.println(e.getMessage());
+            assert(e.getMessage().equals("Input cannot be empty!"));
+        }
+    }
+
+    @Test
+    public void case25() throws Exception {
+        String[] input = {"i1","i2","i3"};
+        String output = "";
+        StreamJobPlan plan = new StreamJobPlan(relation,input,output);
+        try{
+            plan.generate();
+        }
+        catch (Exception e){
+            System.out.println(e.getMessage());
+            assert(e.getMessage().equals("Output cannot be empty!"));
+        }
+    }
+
 }
