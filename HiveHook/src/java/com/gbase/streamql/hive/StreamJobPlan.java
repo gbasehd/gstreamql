@@ -148,11 +148,10 @@ public class StreamJobPlan {
         String jsonFormatStr = new String();
         int base =3;
         jsonFormatStr = repeat("\t",base) + "{\r\n";
-        jsonFormatStr += repeat("\t",base+1) + "\"format\": \"kafka9\",\r\n";
-        jsonFormatStr += repeat("\t",base+1) + "\"outputTable\": \"" + name + "\",\r\n";
-        jsonFormatStr += repeat("\t",base+1) + "\"kafka.bootstrap.servers\": \"127.0.0.1:9092\",\r\n";
-        jsonFormatStr += repeat("\t",base+1) + "\"topics\": \"test\",\r\n";
-        jsonFormatStr += repeat("\t",base+1) + "\"path\": \"-\"\r\n";
+        jsonFormatStr += repeat("\t",base+1) + "\"format\": \"kafka\",\r\n";
+        jsonFormatStr += repeat("\t",base+1) + "\"bootstrap.servers\": \"c1:6667,c2:6667,c3:6667\",\r\n";
+        jsonFormatStr += repeat("\t",base+1) + "\"topics\": \"yyj-input\",\r\n";
+        jsonFormatStr += repeat("\t",base+1) + "\"outputTable\": \"" + name + "\"\r\n";
         if(count > 0 ) {
             jsonFormatStr += repeat("\t",base) + "},\r\n";
         }
@@ -207,10 +206,10 @@ public class StreamJobPlan {
         String jsonFormatStr = new String();
         int base = 3;
         jsonFormatStr += repeat("\t", base) + "{\r\n";
-        jsonFormatStr += repeat("\t", base+1) + "\"mode\": \"append\",\r\n";
-        jsonFormatStr += repeat("\t", base+1) + "\"format\": \"kafka8\",\r\n";
-        jsonFormatStr += repeat("\t", base+1) + "\"metadata.broker.list\":\"127.0.0.1:9092\",\r\n";
-        jsonFormatStr += repeat("\t", base+1) + "\"topics\":\"test2\",\r\n";
+        jsonFormatStr += repeat("\t", base+1) + "\"name\": \"jack\",\r\n";
+        jsonFormatStr += repeat("\t", base+1) + "\"format\": \"kafka\",\r\n";
+        jsonFormatStr += repeat("\t", base+1) + "\"topic\": \"yyj-output\",\r\n";
+        jsonFormatStr += repeat("\t", base+1) + "\"bootstrap.servers\": \"c1:6667,c2:6667,c3:6667\",\r\n";
         jsonFormatStr += repeat("\t", base+1) + "\"inputTableName\": \""+name+"\"\r\n";
         jsonFormatStr += repeat("\t", base) + "}\r";
         return jsonFormatStr;
@@ -237,7 +236,7 @@ public class StreamJobPlan {
         int base = 0;
         head = repeat("\t",base) + "{\r\n";
         head += repeat("\t",base+1) + "\"flink-example\": {\r\n";
-        head += repeat("\t",base+2) + "\"desc\": \"测试\",\r\n";
+        head += repeat("\t",base+2) + "\"desc\": \"demo\",\r\n";
         head += repeat("\t",base+2) + "\"strategy\": \"flink\",\r\n";
         head += repeat("\t",base+2) + "\"algorithm\": [],\r\n";
         head += repeat("\t",base+2) + "\"ref\": [],\r\n";
