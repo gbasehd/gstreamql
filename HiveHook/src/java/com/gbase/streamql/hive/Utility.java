@@ -143,7 +143,10 @@ public class Utility {
             bw.close();
             fw.close();
 
-            pro = Runtime.getRuntime().exec(new String[]{"sh", Conf.SYS_JSON_DIR + "/flink-prepare.sh", tmpFilePath});
+            pro = Runtime.getRuntime().exec(new String[]{"sh",
+                    Conf.SYS_JSON_DIR + "/flink-prepare.sh",
+                    tmpFilePath,
+                    String.valueOf(Conf.SYS_IS_DEBUG)});
             pro.waitFor();
             Logger("\n&&&upload HdfsFile:" + tmpFilePath + "\n");
         } catch (IOException e) {

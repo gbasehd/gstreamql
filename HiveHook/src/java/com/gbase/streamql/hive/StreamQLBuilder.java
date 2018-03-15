@@ -15,7 +15,8 @@ public class StreamQLBuilder {
         switch (parser.getCmdType()) {
             case CREATE_STREAMJOB: {
                 //get plan
-                String[] inputs = this.parser.getStreamInput().split(",");
+                //replace all space
+                String[] inputs = this.parser.getStreamInput().replaceAll(" ", "").split(",");
                 StreamJobPlan plan = new StreamJobPlan(inputs, parser.getStreamOutput());
                 plan.generate();
                 String hdfsFilePath = Utility.uploadHdfsFile(plan.getJson());

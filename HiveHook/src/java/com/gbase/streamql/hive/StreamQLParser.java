@@ -21,7 +21,7 @@ public class StreamQLParser {
     //TODO
     private String PATTERN_INSERT_STREAM_WINDOW = "(^[ ]*insert[ ]+into[ ]+[a-zA-Z0-9\\.]+[ ]+select[ ]+.*from[ ]+[a-zA-Z0-9\\.]+[ ]+)(STREAMWINDOW[ ]+[a-zA-Z0-9\\.]+[ ]+as[ ]*.*)";
     private String PATTERN_INSERT_STREAM_JOIN = "insert stream join";
-    private String PATTERN_INSERT_sth = "^[ ]*insert[ ]+into[ ]+[a-zA-Z0-9\\.]+[ ]+select.*";
+    private String PATTERN_INSERT_sth = "(^[ ]*insert[ ]+into[ ]+[a-zA-Z0-9\\.]+[ ]+)(select.*)";
     private String STREAM_JOB_NAME = "streamJobName";
     private String STREAM_OUTPUT = "streamOutput";
     private String STREAM_INPUT = "streamInput";
@@ -173,10 +173,15 @@ public class StreamQLParser {
                                 getTableList(astNode.getChild(0).toStringTree(), inputStreams);
                                 getTableList(astNode.getChild(1).toStringTree(), outputStreams);
                                 hiveVars.put("IS_STREAM_SQL", null);
-                                hiveVars.put("INPUT_STREAMS", inputStreams.toString());
-                                hiveVars.put("OUTPUT_STREAMS", outputStreams.toString());
-                                hiveVars.put("RUN_TIME_TYPE", "OUTPUT_STREAM");
+                                hiveVars.put("INPUT_STREAMS", inputStreams.toString().endsWith(",")
+                                        ? inputStreams.toString().substring(0, inputStreams.toString().length() - 1)
+                                        : inputStreams.toString());
+                                hiveVars.put("OUTPUT_STREAMS", outputStreams.toString().endsWith(",")
+                                        ? outputStreams.toString().substring(0, outputStreams.toString().length() -1 )
+                                        : outputStreams.toString());
+                                hiveVars.put("RUN_TIME_TYPE", "output");
                                 hiveVars.put("ORG_SQL", new String(cmd));
+                                hiveVars.put("SUB_SELECT_SQL", new String(matcherInsertSth.group(2)));
                                 Utility.Logger("INPUT_STREAMS:" + inputStreams.toString());
                                 Utility.Logger("OUTPUT_STREAMS:" + outputStreams.toString());
                                 Utility.Logger("ORG_SQL:" + hiveVars.get("ORG_SQL"));
@@ -187,13 +192,13 @@ public class StreamQLParser {
                                 }
                             } else
                                 throw new Exception("Get no space to cache variables!");
+                            break;
                         }
                     } catch (ParseException e) {
                         e.printStackTrace();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    break;
                 }
             }
             default: {

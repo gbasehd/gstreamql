@@ -17,11 +17,7 @@ import java.util.Map;
 
 public class StreamQLSemanticAnalyzerHook implements HiveSemanticAnalyzerHook {
     public ASTNode preAnalyze(HiveSemanticAnalyzerHookContext hiveSemanticAnalyzerHookContext, ASTNode astNode) throws SemanticException {
-        SessionState.getConsole().getOutStream().println("preAnalyze: " + hiveSemanticAnalyzerHookContext.getCommand() + "\n");
-        //check is stream or not
-
-
-
+        Utility.Logger("preAnalyze: " + hiveSemanticAnalyzerHookContext.getCommand() + "\n");
         return astNode;
     }
 
@@ -45,9 +41,9 @@ public class StreamQLSemanticAnalyzerHook implements HiveSemanticAnalyzerHook {
             //runtimeType
             edgeInfo.put(Utility.COL_RUNTIME_TYPE, hiveVars.get("RUN_TIME_TYPE"));
             //sql
-            edgeInfo.put(Utility.COL_SQL, hiveVars.get("ORG_SQL"));
+            edgeInfo.put(Utility.COL_SQL, hiveVars.get("SUB_SELECT_SQL"));
             try {
-                    Utility.edgePersist(edgeInfo);
+                Utility.edgePersist(edgeInfo);
                 clearSession();
             } catch (SQLException e) {
                 e.printStackTrace();
