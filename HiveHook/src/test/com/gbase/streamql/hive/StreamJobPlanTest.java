@@ -24,11 +24,11 @@ public class StreamJobPlanTest {
         expect(relation.getPrev(eq("d3"))).andStubReturn(prevs2);
         String[] prevs3 = {"d1","d2"};
         expect(relation.getPrev(eq("d4"))).andStubReturn(prevs3);
-        expect(relation.getSql(eq("o"))).andStubReturn("select … from d3 join d4 …");
-        expect(relation.getSql(eq("d1"))).andStubReturn("select … from i1 join i2 …");
-        expect(relation.getSql(eq("d2"))).andStubReturn("select … from i3 …");
-        expect(relation.getSql(eq("d3"))).andStubReturn("select … from i3 …");
-        expect(relation.getSql(eq("d4"))).andStubReturn("select … from d1 join d2 …");
+        expect(relation.getSql(eq("o"))).andStubReturn("select * from d3 join d4 ");
+        expect(relation.getSql(eq("d1"))).andStubReturn("select * from i1 join i2 ");
+        expect(relation.getSql(eq("d2"))).andStubReturn("select * from i3 ");
+        expect(relation.getSql(eq("d3"))).andStubReturn("select * from i3 ");
+        expect(relation.getSql(eq("d4"))).andStubReturn("select * from d1 join d2 ");
         replay(relation);
     }
 
