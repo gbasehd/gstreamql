@@ -263,7 +263,6 @@ public class StreamJobPlan {
         this.count++;
     }
 
-
     private  String getInputNames()
     {
         String inputNames = "";
@@ -274,7 +273,6 @@ public class StreamJobPlan {
         inputNames += this.inputNames[this.inputNames.length-1];
         return inputNames;
     }
-
 
 }
 
