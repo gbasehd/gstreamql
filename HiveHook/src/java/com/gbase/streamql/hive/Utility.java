@@ -135,7 +135,8 @@ public class Utility {
 
     public static String uploadHdfsFile(String fileContent) {
         Process pro = null;
-        String tmpFilePath = Conf.SYS_JSON_DIR + "/tmpHdfsFile.txt" + System.currentTimeMillis();
+        String fileName = "/tmpHdfsFile.txt" + System.currentTimeMillis();
+        String tmpFilePath = Conf.SYS_JSON_DIR + fileName;
         try {
             FileWriter fw = new FileWriter(tmpFilePath, true);
             BufferedWriter bw = new BufferedWriter(fw);
@@ -155,7 +156,7 @@ public class Utility {
             e.printStackTrace();
         }
 
-        return tmpFilePath;
+        return "/streamingPro" + fileName;
     }
 
     public static String getPlan(String outputName) {
