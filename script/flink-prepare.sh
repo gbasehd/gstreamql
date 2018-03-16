@@ -1,8 +1,5 @@
 #!/bin/bash
 hdfs dfs -rm -f "/streamingPro/$1"
 hdfs dfs -put "$1" /streamingPro
-if [ $2 = "false" ]
-then
-    rm $1 -f
-fi
+rm /home/mjw/streamingpro/output -f
 hdfs dfs -ls /streamingPro
