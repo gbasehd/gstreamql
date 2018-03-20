@@ -82,7 +82,7 @@ public class Utility {
     public static StreamJobMetaData getMetaFromHive(String jobName) throws Exception{
         Connection conn = HiveService.getConn();
         Statement stmt  = HiveService.getStmt(conn);
-        String sql = "select name, pid, jobid, status, define from " + Conf.SYS_DB + ".streamjobmgr where name = \"" + jobName +"\"";
+        String sql = "select name, pid, jobid, status, define, filepath from " + Conf.SYS_DB + ".streamjobmgr where name = \"" + jobName +"\"";
         ResultSet res   = stmt.executeQuery(sql);
         ResultSetMetaData meta = res.getMetaData();
         StreamJobMetaData jobMeta = null;
@@ -93,6 +93,7 @@ public class Utility {
             jobMeta.setJobid(res.getString(3));
             jobMeta.setStatus(res.getString(4));
             jobMeta.setDefine(res.getString(5));
+            jobMeta.setFilePath(res.getString(6));
         }
         HiveService.closeStmt(stmt);
         HiveService.closeConn(conn);
@@ -163,4 +164,7 @@ public class Utility {
         return "PLAN_PLAN_PLAN";
     }
 
+    public static void updateStreamJobStatus() {
+        //TODO
+    }
 }

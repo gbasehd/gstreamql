@@ -6,6 +6,7 @@ public class StreamJobMetaData {
     private String jobid;
     private String status;
     private String define;
+    private String filepath;
 
     public String getName(){
         return this.name;
@@ -17,6 +18,14 @@ public class StreamJobMetaData {
     public String getDefine(){
         return this.define;
     }
+    public String getFilePath() {
+        return this.filepath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filepath = filePath;
+    }
+
     public void setName(String name){
         this.name = name;
     }

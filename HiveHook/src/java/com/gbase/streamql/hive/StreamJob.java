@@ -44,7 +44,7 @@ public class StreamJob {
             {
                 switch(Conf.JOB_TARGET) {
                     case HDFS:
-                        Utility.startFlinkJob(this.jobMetaData.getName(),this.jobMetaData.getDefine());
+                        Utility.startFlinkJob(this.jobMetaData.getName(),this.jobMetaData.getFilePath());
                         break;
                     case LOCAL:
                         break;
@@ -64,7 +64,7 @@ public class StreamJob {
 
     // tmp code
     public String getPid() throws InterruptedException {
-         return Utility.getPid(this.jobMetaData.getDefine());
+         return Utility.getPid(this.jobMetaData.getFilePath());
     }
 
     private StreamJobMetaData getMetaData() throws Exception{
@@ -72,4 +72,5 @@ public class StreamJob {
             throw new Exception("GetMetaData error, jobName undefined!");
         return Utility.getMetaFromHive(this.jobName);
     }
+
 }
