@@ -3,7 +3,7 @@ import sys
 import requests
 from urlparse import urljoin
 
-BASE_URL = 'http://192.167.1.222:8081'
+BASE_URL = 'http://192.167.1.225:8081'
 AUTH = ('admin', 'admin')
 
 def main():

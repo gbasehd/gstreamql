@@ -9,16 +9,12 @@ import org.apache.log4j.Logger;
 
 public class HiveService {
     static Logger logger = Logger.getLogger(HiveService.class);
-    public static String dirverName = "org.apache.hive.jdbc.HiveDriver";
-    public static String url = "jdbc:hive2://192.167.1.222:10000/default";
-    public static String user = "hive";
-    public static String pass = "hive";
 
     public static Connection getConn(){
         Connection conn = null;
         try {
-            Class.forName(dirverName);
-            conn = DriverManager.getConnection(url, user, pass);
+            Class.forName(Conf.HIVE_DRIVER);
+            conn = DriverManager.getConnection(Conf.HIVE_URL,Conf.HIVE_USER,Conf.HIVE_PASS);
         } catch (ClassNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

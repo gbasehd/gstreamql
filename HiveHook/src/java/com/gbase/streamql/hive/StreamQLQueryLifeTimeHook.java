@@ -26,21 +26,21 @@ public class StreamQLQueryLifeTimeHook implements QueryLifeTimeHook {
 
   @Override
   public void beforeCompile(QueryLifeTimeHookContext ctx)  {
-    //SessionState.getConsole().getOutStream().println("beforeCompile: " + ctx.getCommand());
+    Utility.Logger("\nbeforeCompile: " + ctx.getCommand());
   }
 
   @Override
   public void afterCompile(QueryLifeTimeHookContext ctx, boolean hasError) {
-    //SessionState.getConsole().getOutStream().println("afterCompile: " + ctx.getCommand());
+    Utility.Logger("\nafterCompile: " + ctx.getCommand());
   }
 
   @Override
   public void beforeExecution(QueryLifeTimeHookContext ctx) {
-    //SessionState.getConsole().getOutStream().println("beforeExecution: " + ctx.getCommand());
+    Utility.Logger("\nbeforeExecution: " + ctx.getCommand());
   }
 
   @Override
   public void afterExecution(QueryLifeTimeHookContext ctx, boolean hasError) {
-    //SessionState.getConsole().getOutStream().println("afterExecution: " + ctx.getCommand());
+    Utility.Logger("\nafterExecution: " + ctx.getCommand());
   }
 }

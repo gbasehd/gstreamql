@@ -1,26 +1,52 @@
-# gstreamql
-demo ²½Öè£º
-1¡¢»·¾³×¼±¸
-  sh flink-prepare.sh flink.json
-  -- CREATE TABLE mjw.streamjobmgr(name string, pid string, jobid string, status string, define string) CLUSTERED BY (name) INTO 2 BUCKETS STORED AS ORC TBLPROPERTIES ("transactional"="true");
-  -- truncate table mjw.streamjobmgr;
-  
-  -- ´´½¨input topic
-  /usr/ghd/current/kafka-broker/bin/kafka-topics.sh --zookeeper s1:2181,s2:2181,s3:2181 --create --topic yyj-input --partitions 3 --replication-factor 2
-  -- ´´½¨output topic
-  /usr/ghd/current/kafka-broker/bin/kafka-topics.sh --zookeeper s1:2181,s2:2181,s3:2181 --create --topic yyj-output --partitions 3 --replication-factor 2
-  -- Éú²úÊı¾İ
-  /usr/ghd/current/kafka-broker/bin/kafka-console-producer.sh --broker-list s1:6667,s2:6667,s3:6667 --topic yyj-input
-  -- Ïû·ÑÊı¾İ
-  /usr/ghd/current/kafka-broker/bin/kafka-console-consumer.sh --zookeeper s1:2181,s2:2181,s3:2181 --topic yyj-output --from-beginning
-  
-2¡¢Ö´ĞĞ
-  -- nc -l 9001
-  CREATE STREAMJOB streamTest TBLPROPERTIES ("jobdef"="/streamingPro/flink.json");
-  SHOW STREAMJOBS;
-  START STREAMJOB streamTest; 
-  http://192.167.1.222:8081/#/overview
-  stop streamjob streamTest;
-  drop streamjob streamTest;
+##demo æ­¥éª¤ï¼š
+# ç¼–ç å
+    cp /home/mjw/gstreamql/HiveHook/target/streamql-hive-hook-1.0-SNAPSHOT.jar /usr/ghd/current/hive-client/lib/ 
+    -- hive.exec.driver.run.hooks=com.gbase.streamql.hive.StreamQLDriverRunHook
 
-×¢£ºĞèÒª½«½Å±¾·Åµ½/home/mjwÏÂ
+# ç¯å¢ƒå‡†å¤‡
+  
+    sh flink-prepare.sh flink.json(å‰æï¼šuseréœ€è¦æœ‰æ“ä½œhdfsæƒé™ï¼Œ/streamingProéœ€è¦å­˜åœ¨)
+  
+    -- python get-pip.py
+  
+    -- python -m pip install requests
+  
+     -- create database mjw;
+  
+    -- CREATE TABLE mjw.streamjobmgr(name string, pid string, jobid string, status string, define string) CLUSTERED BY (name) INTO 2 BUCKETS STORED AS ORC TBLPROPERTIES ("transactional"="true");
+  
+    -- truncate table mjw.streamjobmgr;
+    
+  
+    * åˆ›å»ºinput topic
+  
+     /usr/ghd/current/kafka-broker/bin/kafka-topics.sh --zookeeper c1:2181,c2:2181,c3:2181 --create --topic yyj-input --partitions 3 --replication-factor 2
+  
+    * åˆ›å»ºoutput topic
+  
+     /usr/ghd/current/kafka-broker/bin/kafka-topics.sh --zookeeper c1:2181,c2:2181,c3:2181 --create --topic yyj-output --partitions 3 --replication-factor 2
+
+    * ç”Ÿäº§æ•°æ®
+
+     /usr/ghd/current/kafka-broker/bin/kafka-console-producer.sh --broker-list c1:6667,c2:6667,c3:6667 --topic yyj-input
+   
+    * æ¶ˆè´¹æ•°æ®
+
+      /usr/ghd/current/kafka-broker/bin/kafka-console-consumer.sh --zookeeper c1:2181,c2:2181,c3:2181 --topic yyj-output --from-beginning
+  
+# æ‰§è¡Œ
+    -- nc -l 9001
+  
+    CREATE STREAMJOB streamTest TBLPROPERTIES ("jobdef"="/streamingPro/flink.json");
+  
+    SHOW STREAMJOBS;
+  
+    START STREAMJOB streamTest; 
+  
+    http://192.167.1.222:8081/#/overview
+  
+    stop streamjob streamTest;
+  
+    drop streamjob streamTest;
+  
+æ³¨ï¼šéœ€è¦å°†è„šæœ¬æ”¾åˆ°StreamQLConfçš„jsonFileDirä¸‹
