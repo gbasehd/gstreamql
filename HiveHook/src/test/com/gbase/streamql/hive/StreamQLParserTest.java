@@ -11,7 +11,8 @@ import static org.junit.Assert.*;
 public class StreamQLParserTest {
 
     //stremjob management
-    String createSql = "CREATE STREAMJOB db.streamTest TBLPROPERTIES (\"output\"=\"/streamingPro/flink.json\")";
+    boolean detailed = true;
+    String createSql = "CREATE STREAMJOB db.streamTest TBLPROPERTIES (\"input\"=\"i\", \"output\"=\"o\")";
     String showSql = "SHOW STREAMJOBS";
     String startSql = "START STREAMJOB db.streamTest";
     String stopSql = "stop streamjob db.streamTest";
@@ -55,11 +56,17 @@ public class StreamQLParserTest {
         assertEquals(showStreamSqlParser.getCmdType(), CMD.SHOW_STREAMS);
         assertEquals(dropStreamSqlParser.getCmdType(), CMD.DROP_STREAM);
     }
-
+    private void printDetailed(String info){
+        if (detailed) {
+            System.out.println(info);
+        }
+    }
     @Test
     public void getStreamJobName() throws Exception {
         init();
+        printDetailed(createSqlParser.getStreamJobName());
         assertEquals(createSqlParser.getStreamJobName(), "db.streamTest");
+
         assertEquals(showSqlParser.getStreamJobName(), null);
         assertEquals(startSqlParser.getStreamJobName(), "db.streamTest");
         assertEquals(stopSqlParser.getStreamJobName(), "db.streamTest");
@@ -72,7 +79,7 @@ public class StreamQLParserTest {
     @Test
     public void getStreamOutput() throws Exception {
         init();
-        assertEquals(createSqlParser.getStreamOutput(), "/streamingPro/flink.json");
+        assertEquals(createSqlParser.getStreamOutput(), "o");
         assertEquals(showSqlParser.getStreamOutput(), null);
         assertEquals(startSqlParser.getStreamOutput(), null);
         assertEquals(stopSqlParser.getStreamOutput(), null);

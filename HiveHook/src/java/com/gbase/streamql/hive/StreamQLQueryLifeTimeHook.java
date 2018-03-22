@@ -23,24 +23,25 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 import java.lang.reflect.Field;
 
 public class StreamQLQueryLifeTimeHook implements QueryLifeTimeHook {
+  private Utility util = new Utility();
 
   @Override
   public void beforeCompile(QueryLifeTimeHookContext ctx)  {
-    Utility.Logger("\nbeforeCompile: " + ctx.getCommand());
+    util.Logger("\nbeforeCompile: " + ctx.getCommand());
   }
 
   @Override
   public void afterCompile(QueryLifeTimeHookContext ctx, boolean hasError) {
-    Utility.Logger("\nafterCompile: " + ctx.getCommand());
+    util.Logger("\nafterCompile: " + ctx.getCommand());
   }
 
   @Override
   public void beforeExecution(QueryLifeTimeHookContext ctx) {
-    Utility.Logger("\nbeforeExecution: " + ctx.getCommand());
+    util.Logger("\nbeforeExecution: " + ctx.getCommand());
   }
 
   @Override
   public void afterExecution(QueryLifeTimeHookContext ctx, boolean hasError) {
-    Utility.Logger("\nafterExecution: " + ctx.getCommand());
+    util.Logger("\nafterExecution: " + ctx.getCommand());
   }
 }

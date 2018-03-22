@@ -4,6 +4,7 @@ public class StreamJob {
 
     private String jobName;
     private StreamJobMetaData jobMetaData = null;
+    private Utility util = new Utility();
 
     public StreamJob(String jobName) throws Exception {
         if(jobName == null || jobName.equals(""))
@@ -34,8 +35,8 @@ public class StreamJob {
     }
 
     public void stop() throws Exception {
-        Utility.cancelFlinkJob(this.jobMetaData.getJobid());
-        Utility.killPro(this.jobMetaData.getPid());
+        util.cancelFlinkJob(this.jobMetaData.getJobid());
+        util.killPro(this.jobMetaData.getPid());
     }
 
     public void start() throws Exception {
@@ -44,7 +45,7 @@ public class StreamJob {
             {
                 switch(Conf.JOB_TARGET) {
                     case HDFS:
-                        Utility.startFlinkJob(this.jobMetaData.getName(),this.jobMetaData.getFilePath());
+                        util.startFlinkJob(this.jobMetaData.getName(),this.jobMetaData.getFilePath());
                         break;
                     case LOCAL:
                         break;
@@ -59,18 +60,18 @@ public class StreamJob {
     }
 
     public String getJobId() throws Exception {
-        return Utility.getJobIdFromServer(this.jobName);
+        return util.getJobIdFromServer(this.jobName);
     }
 
     // tmp code
     public String getPid() throws InterruptedException {
-         return Utility.getPid(this.jobMetaData.getFilePath());
+         return util.getPid(this.jobMetaData.getFilePath());
     }
 
     private StreamJobMetaData getMetaData() throws Exception{
         if(this.jobName == null || this.jobName.equals(""))
             throw new Exception("GetMetaData error, jobName undefined!");
-        return Utility.getMetaFromHive(this.jobName);
+        return util.getMetaFromHive(this.jobName);
     }
 
 }

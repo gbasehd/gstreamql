@@ -23,6 +23,7 @@ import org.apache.hadoop.hive.ql.HiveDriverRunHookContext;
 
 public class StreamQLDriverRunHook implements HiveDriverRunHook{
 
+    private Utility util = new Utility();
     //@Override
     public void preDriverRun(HiveDriverRunHookContext hookContext) throws Exception {
 
@@ -31,8 +32,8 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook{
         StreamQLParser parser = new StreamQLParser(cmd);
         parser.parse();
 
-        Utility.Logger("STEP INTO PRE DRIVER RUN");
-        Utility.Logger("CMD TYPE:" + parser.getCmdType());
+        util.Logger("STEP INTO PRE DRIVER RUN");
+        util.Logger("CMD TYPE:" + parser.getCmdType());
         StreamJob job = null;
         if (parser.getTransformSql() != null) {
             if(parser.getStreamJobName() != null && !parser.getStreamJobName().equals(""))
@@ -115,7 +116,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook{
         }
         if(isContinueHandle) {
             myCmd = builder.getSql();
-            Utility.setCmd(cmd, myCmd);
+            util.setCmd(cmd, myCmd);
         }
     }
 
