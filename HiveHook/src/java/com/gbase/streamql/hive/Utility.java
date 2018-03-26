@@ -121,15 +121,18 @@ public class Utility {
     public static void edgePersist(Map<String, String> edgeInfo) throws SQLException {
         Connection conn = HiveService.getConn();
         Statement stmt  = HiveService.getStmt(conn);
-        String sql = "insert into " + Conf.SYS_DB + ".relation(" + COL_BEGIN + ", " + COL_END + ", " + COL_RUNTIME_TYPE + ", " + COL_SQL + ") values (\""
-        //String sql = "insert into tmp(" + COL_BEGIN + ", " + COL_END + ", " + COL_RUNTIME_TYPE + ", " + COL_SQL + ") values (\""
+        String delSql  = "delete from " + Conf.SYS_DB + ".relation where source=\"" + edgeInfo.get(COL_BEGIN)
+                + "\" and dest=\"" + edgeInfo.get(COL_END)
+                + "\" and runtimeType=\"" + edgeInfo.get(COL_RUNTIME_TYPE) + "\"";
+        Utility.Logger("\ndel SQL:" + delSql);
+        stmt.execute(delSql);
+        String insertSql = "insert into " + Conf.SYS_DB + ".relation(" + COL_BEGIN + ", " + COL_END + ", " + COL_RUNTIME_TYPE + ", " + COL_SQL + ") values (\""
                 + edgeInfo.get(COL_BEGIN) + "\", \""
                 + edgeInfo.get(COL_END) + "\", \""
                 + edgeInfo.get(COL_RUNTIME_TYPE) + "\", \""
                 + edgeInfo.get(COL_SQL) + "\")";
-        stmt.execute(sql);
-        //stmt.execute("show tables");
-        Utility.Logger("\nSQL:" + sql);
+        Utility.Logger("\ninsert SQL:" + insertSql);
+        stmt.execute(insertSql);
         HiveService.closeStmt(stmt);
         HiveService.closeConn(conn);
     }
@@ -166,5 +169,25 @@ public class Utility {
 
     public static void updateStreamJobStatus() {
         //TODO
+    }
+
+    /**
+     * 递归截取字符串获取表名
+     * @param strTree
+     * @return
+     */
+    public static void getTableList(String strTree, StringBuilder tabNames){
+        int i1 = strTree.indexOf("tok_tabname");
+        String substring1 = "";
+        String substring2 = "";
+        if(i1>0){
+            substring1 = strTree.substring(i1+12);
+            int i2 = substring1.indexOf(")");
+            substring2 = substring1.substring(0,i2);
+            substring2 = substring2.replaceFirst(" ", ".");
+            Utility.Logger("get table list: " + substring2);
+            tabNames.append(substring2).append(",");
+            getTableList(substring1, tabNames);
+        }
     }
 }

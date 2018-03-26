@@ -61,6 +61,7 @@ public class StreamQLSemanticAnalyzerHook implements HiveSemanticAnalyzerHook {
         hiveVars.remove("OUTPUT_STREAMS");
         hiveVars.remove("RUN_TIME_TYPE");
         hiveVars.remove("ORG_SQL");
+        hiveVars.remove("SUB_SELECT_SQL");
     }
 
 }

@@ -7,6 +7,8 @@ import java.util.HashMap;
 import org.apache.hadoop.hive.ql.parse.*;
 import org.apache.hadoop.hive.ql.session.SessionState;
 
+import static com.gbase.streamql.hive.Utility.getTableList;
+
 public class StreamQLParser {
 
     private String PATTERN_CREATE_STREAMJOB = "^([ ]*CREATE[ ]+STREAMJOB[ ]+)([a-zA-Z0-9\\.]+)([ ]+TBLPROPERTIES[ ]*\\(\\\"input\\\"=\\\")([a-zA-Z0-9,/\\.]+)(\\\"[, ]+\\\"output\\\"=\\\")([a-zA-Z0-9/\\.]+)(\\\"\\)[ ]*)$";
@@ -15,13 +17,22 @@ public class StreamQLParser {
     private String PATTERN_STOP_STREAMJOB = "(^[ ]*stop[ ]+streamjob[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
     private String PATTERN_DROP_STREAMJOB = "(^[ ]*drop[ ]+streamjob[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
     private String PATTERN_DESCRIBE_STREAMJOB = "^([ ]*describe[ ]+)([a-zA-Z/0-9]+)([ ]*)$";
-    private String PATTERN_CREATE_STREAM = "(^[ ]*CREATE[ ]+STREAM[ ]+)(.*)";
+    private String PATTERN_CREATE_STREAM = "(^[ ]*CREATE[ ]+STREAM[ ]+)([a-zA-Z\\.0-9]+)([ ]+TBLPROPERTIES.*)";
     private String PATTERN_SHOW_STREAMS = "^[ ]*SHOW[ ]+STREAMS[ ]*$";
     private String PATTERN_DROP_STREAM = "(^[ ]*drop[ ]+stream[ ]+)([a-zA-Z0-9\\.]+)([ ]*)$";
     //TODO
-    private String PATTERN_INSERT_STREAM_WINDOW = "(^[ ]*insert[ ]+into[ ]+[a-zA-Z0-9\\.]+[ ]+select[ ]+.*from[ ]+[a-zA-Z0-9\\.]+[ ]+)(STREAMWINDOW[ ]+[a-zA-Z0-9\\.]+[ ]+as[ ]*.*)";
+    /*private String PATTERN_INSERT_STREAM_WINDOW = "(^[ ]*insert[ ]+into[ ]+)([a-zA-Z0-9\\.]+)([ ]+select[ ]+.*from[ ]+)([a-zA-Z0-9\\.]+)" +
+            "([ ]+STREAMWINDOW[ ]+[a-zA-Z0-9\\.]+[ ]+as[ ]*[(]" +
+            "(SEPARATED[ ]+BY[ ]+[A-Za-z0-9]+[ ]+)?[ ]*" +
+            "(LENGTH[ ]+[0-9]+[ ]+(SECOND|MINUTE)|INTERVAL[ ]+[0-9]+[ ]+(SECOND|MINUTE)|INFINITE)" +
+            "([ ]+SLIDE[ ]+[0-9]+[ ]+(MINUTE|SECOND))?[ ]*[)][ ]*$)";*/
+    /*private String PATTERN_INSERT_STREAM_WINDOW = "(^[ ]*insert[ ]+into[ ]+)([a-zA-Z0-9\\.]+)([ ]+SELECT[ ]+.*FROM[ ]+)([A-Za-z0-9\\.]+)" +
+            "([ ]+GROUP[ ]+BY[ ]+" +
+            "(TUMBLE[ ]*[(][A-Za-z0-9  ]+[,][ ]*INTERVAL[ ]+['][0-9]+['][ ]+SECOND[ ]*[)]" +
+            "|HOP[ ]*[(][A-Za-z0-9  ]+[,][ ]*INTERVAL[ ]+['][0-9]+['][ ]+SECOND[ ]*[,][ ]*INTERVAL[ ]+['][0-9]+['][ ]+SECOND[ ]*[)])[ ]*$)";*/
     private String PATTERN_INSERT_STREAM_JOIN = "insert stream join";
     private String PATTERN_INSERT_sth = "(^[ ]*insert[ ]+into[ ]+[a-zA-Z0-9\\.]+[ ]+)(select.*)";
+    private String PATTERN_EXPLAIN_PLAN = "^[ ]*explain[ ]+plan[ ]*$";
     private String STREAM_JOB_NAME = "streamJobName";
     private String STREAM_OUTPUT = "streamOutput";
     private String STREAM_INPUT = "streamInput";
@@ -34,7 +45,7 @@ public class StreamQLParser {
         this.cmd = cmd;
     }
 
-    public void parse() {
+    public void parse() throws Exception {
         //init cmd type
         CMD cmdType = CMD.CREATE_STREAMJOB;
         switch(cmdType) {
@@ -104,7 +115,7 @@ public class StreamQLParser {
                 Pattern pattern = Pattern.compile(regExCreateStream, Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(cmd);
                 if (matcher.matches()) {
-                    cmd = cmd.replace(matcher.group(1), "CREATE TABLE ");
+                    cmd = "CREATE TABLE " + matcher.group(2) + "(a int)" + matcher.group(3);
                     this.cmdType = CMD.CREATE_STREAM;
                     break;
                 }
@@ -130,9 +141,7 @@ public class StreamQLParser {
                 }
             }
             case INSERT_STREAM: {
-                String regExInsertWin = PATTERN_INSERT_STREAM_WINDOW;
-                Pattern patternInsertWin = Pattern.compile(regExInsertWin, Pattern.CASE_INSENSITIVE);
-                Matcher matcherInsertWin = patternInsertWin.matcher(cmd);
+
 
                 String regExInsertJoin = PATTERN_INSERT_STREAM_JOIN;
                 Pattern patternInsertJoin = Pattern.compile(regExInsertJoin, Pattern.CASE_INSENSITIVE);
@@ -142,11 +151,32 @@ public class StreamQLParser {
                 Pattern patternInsertSth = Pattern.compile(regExInsertSth, Pattern.CASE_INSENSITIVE);
                 Matcher matcherInsertSth = patternInsertSth.matcher(cmd);
 
+                /*String regExInsertWin = PATTERN_INSERT_STREAM_WINDOW;
+                Pattern patternInsertWin = Pattern.compile(regExInsertWin, Pattern.CASE_INSENSITIVE);
+                Matcher matcherInsertWin = patternInsertWin.matcher(cmd);
                 if (matcherInsertWin.matches()) {
-                    cmd = matcherInsertWin.group(1);
-                    this.cmdType = CMD.INSERT_STREAM;
-                    break;
-                } else if (matcherInsertJoin.matches()) {
+                    String input = matcherInsertWin.group(2);
+                    String output = matcherInsertWin.group(4);
+
+                    if(getHiveVars() != null) {
+                        Map<String, String> hiveVars = getHiveVars();
+                        hiveVars.put("IS_STREAM_SQL", null);
+                        hiveVars.put("INPUT_STREAMS", matcherInsertWin.group(4));
+                        hiveVars.put("OUTPUT_STREAMS", matcherInsertWin.group(2));
+                        hiveVars.put("RUN_TIME_TYPE", "output");
+                        hiveVars.put("ORG_SQL", new String(cmd));
+                        hiveVars.put("SUB_SELECT_SQL", new String(matcherInsertWin.group(3) + matcherInsertWin.group(4) + matcherInsertWin.group(5)));
+                        Utility.Logger("INPUT_STREAMS:" + hiveVars.get("INPUT_STREAMS"));
+                        Utility.Logger("OUTPUT_STREAMS:" + hiveVars.get("OUTPUT_STREAMS"));
+                        Utility.Logger("SUB_SELECT_SQL:" + hiveVars.get("SUB_SELECT_SQL"));
+
+                        String sql = "select 0 from " + input + "," + output + " limit 1";
+                        this.cmd = sql;
+                        this.cmdType = CMD.INSERT_STREAM;
+                        break;
+                    } else
+                        throw new Exception("Get no space to cache variables!");
+                } else */if (matcherInsertJoin.matches()) {
                     this.cmdType = CMD.INSERT_STREAM;
                     break;
                 } else if (matcherInsertSth.matches()) {
@@ -201,6 +231,16 @@ public class StreamQLParser {
                     }
                 }
             }
+            case EXPLAIN_PLAN: {
+                String regExExplain = PATTERN_EXPLAIN_PLAN;
+                Pattern pattern = Pattern.compile(regExExplain, Pattern.CASE_INSENSITIVE);
+                Matcher matcher = pattern.matcher(cmd);
+                if (matcher.matches()) {
+                    cmd = "select source, dest, runtimeType, sql from " + Conf.SYS_DB + ".relation";
+                    this.cmdType = CMD.EXPLAIN_PLAN;
+                    break;
+                }
+            }
             default: {
                 this.cmdType = CMD.UNMATCHED;
                 this.cmd = null;
@@ -213,27 +253,6 @@ public class StreamQLParser {
     public String getStreamInput() { return mapCmdParams.get(STREAM_INPUT); }
     public String getTransformSql() { return this.cmd; }
     public CMD getCmdType() {return this.cmdType; }
-
-
-    /**
-     * 递归截取字符串获取表名
-     * @param strTree
-     * @return
-     */
-    public void getTableList(String strTree, StringBuilder tabNames){
-        int i1 = strTree.indexOf("tok_tabname");
-        String substring1 = "";
-        String substring2 = "";
-        if(i1>0){
-            substring1 = strTree.substring(i1+12);
-            int i2 = substring1.indexOf(")");
-            substring2 = substring1.substring(0,i2);
-            substring2 = substring2.replaceFirst(" ", ".");
-            Utility.Logger("get table list: " + substring2);
-            tabNames.append(substring2).append(",");
-            getTableList(substring1, tabNames);
-        }
-    }
 
     private Map<String, String> getHiveVars() {
         Map<String, String> hiveVars = null;

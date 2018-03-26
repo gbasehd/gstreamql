@@ -106,6 +106,7 @@ public class StreamQLDriverRunHook implements HiveDriverRunHook{
             case SHOW_STREAMS:
             case DROP_STREAM:
             case INSERT_STREAM:
+            case EXPLAIN_PLAN:
                 isContinueHandle = true;
                 break;
             case UNMATCHED:

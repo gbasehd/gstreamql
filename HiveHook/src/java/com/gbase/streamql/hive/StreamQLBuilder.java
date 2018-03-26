@@ -56,6 +56,7 @@ public class StreamQLBuilder {
             case SHOW_STREAMS:
             case DROP_STREAM:
             case INSERT_STREAM:
+            case EXPLAIN_PLAN:
             case UNMATCHED:
             default:
                 sql = parser.getTransformSql();
