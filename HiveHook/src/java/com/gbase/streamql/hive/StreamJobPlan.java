@@ -1,31 +1,29 @@
 package com.gbase.streamql.hive;
 
+import javax.lang.model.type.ArrayType;
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class StreamJobPlan {
 
-    private String[] inputNames;
-    private String outputName;
-    private String plan;
+    private String[] inputNames = {};
+    private String outputName = "";
+    private String plan = "";
     private Stack<String> jsonStrStack = new Stack<String>() ; // Save the generated json string according to plan
-    private int count;
-    private StreamRelation relation;
+    private int count = 0;
+    private StreamRelation relation = new StreamRelation();
     private boolean isGenerated = false;
 
     public StreamJobPlan(String[] inputNames, String outputName){
         this.inputNames = inputNames;
         this.outputName = outputName;
-        this.count = 0;
-        this.plan = "";
-        this.relation = new StreamRelation();
     }
 
-    public StreamJobPlan(StreamRelation r,String[] inputNames, String outputName){
-        this.inputNames = inputNames;
+    public StreamJobPlan(){}
+
+    public void set(String inputNames,String outputName){
+        this.inputNames = inputNames.replaceAll(" ", "").split(",");
         this.outputName = outputName;
-        this.count = 0;
-        this.plan = "";
-        this.relation = r;
     }
 
     public String getJson() throws Exception{

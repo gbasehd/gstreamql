@@ -40,6 +40,7 @@ public class StreamQLParser {
     private CMD cmdType;
     private Map<String, String> mapCmdParams = new HashMap<String, String>();
     private String cmd;
+    private Utility util = new Utility();
 
     public StreamQLParser (String cmd){
         this.cmd = cmd;
@@ -212,9 +213,9 @@ public class StreamQLParser {
                                 hiveVars.put("RUN_TIME_TYPE", "output");
                                 hiveVars.put("ORG_SQL", new String(cmd));
                                 hiveVars.put("SUB_SELECT_SQL", new String(matcherInsertSth.group(2)));
-                                Utility.Logger("INPUT_STREAMS:" + inputStreams.toString());
-                                Utility.Logger("OUTPUT_STREAMS:" + outputStreams.toString());
-                                Utility.Logger("ORG_SQL:" + hiveVars.get("ORG_SQL"));
+                                util.Logger("INPUT_STREAMS:" + inputStreams.toString());
+                                util.Logger("OUTPUT_STREAMS:" + outputStreams.toString());
+                                util.Logger("ORG_SQL:" + hiveVars.get("ORG_SQL"));
 
                                 if(!outputStreams.toString().equals("")) {
                                     String sql = "select 0 from " + inputStreams + outputStreams.substring(0, outputStreams.length() - 1) + " limit 1";

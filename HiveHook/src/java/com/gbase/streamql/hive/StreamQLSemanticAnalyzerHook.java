@@ -8,6 +8,7 @@ import org.apache.hadoop.hive.ql.lib.Node;
 import org.apache.hadoop.hive.ql.parse.*;
 import org.apache.hadoop.hive.ql.session.SessionState;
 
+import javax.swing.*;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -16,8 +17,9 @@ import java.util.List;
 import java.util.Map;
 
 public class StreamQLSemanticAnalyzerHook implements HiveSemanticAnalyzerHook {
+    private Utility util = new Utility();
     public ASTNode preAnalyze(HiveSemanticAnalyzerHookContext hiveSemanticAnalyzerHookContext, ASTNode astNode) throws SemanticException {
-        Utility.Logger("preAnalyze: " + hiveSemanticAnalyzerHookContext.getCommand() + "\n");
+        util.Logger("preAnalyze: " + hiveSemanticAnalyzerHookContext.getCommand() + "\n");
         return astNode;
     }
 
@@ -28,22 +30,22 @@ public class StreamQLSemanticAnalyzerHook implements HiveSemanticAnalyzerHook {
         if(hiveVars.size() > 0 && hiveVars.keySet().contains("IS_STREAM_SQL")) {
             String OUTPUT_STREAM = "output";
             String DERIVE_STREAM = "derive";
-            Utility.Logger("postAnalyze: " + hiveSemanticAnalyzerHookContext.getCommand());
+            util.Logger("postAnalyze: " + hiveSemanticAnalyzerHookContext.getCommand());
             Map<String, String> edgeInfo = new HashMap<String, String>();
             //simple insert select
             // eg. insert into a select b;
 
             //input
-            edgeInfo.put(Utility.COL_BEGIN, hiveVars.get("INPUT_STREAMS"));
+            edgeInfo.put(util.COL_BEGIN, hiveVars.get("INPUT_STREAMS"));
             //output
-            edgeInfo.put(Utility.COL_END, hiveVars.get("OUTPUT_STREAMS"));
+            edgeInfo.put(util.COL_END, hiveVars.get("OUTPUT_STREAMS"));
 
             //runtimeType
-            edgeInfo.put(Utility.COL_RUNTIME_TYPE, hiveVars.get("RUN_TIME_TYPE"));
+            edgeInfo.put(util.COL_RUNTIME_TYPE, hiveVars.get("RUN_TIME_TYPE"));
             //sql
-            edgeInfo.put(Utility.COL_SQL, hiveVars.get("SUB_SELECT_SQL"));
+            edgeInfo.put(util.COL_SQL, hiveVars.get("SUB_SELECT_SQL"));
             try {
-                Utility.edgePersist(edgeInfo);
+                util.edgePersist(edgeInfo);
                 clearSession();
             } catch (SQLException e) {
                 e.printStackTrace();

@@ -4,6 +4,8 @@ public class StreamQLBuilder {
 
     private StreamQLParser parser;
     private StreamJob job;
+    private StreamJobPlan plan = new StreamJobPlan();
+    private Utility util = new Utility();
 
     public StreamQLBuilder(StreamQLParser parser, StreamJob job){
        this.parser = parser;
@@ -16,19 +18,20 @@ public class StreamQLBuilder {
             case CREATE_STREAMJOB: {
                 //get plan
                 //replace all space
-                String[] inputs = this.parser.getStreamInput().replaceAll(" ", "").split(",");
-                StreamJobPlan plan = new StreamJobPlan(inputs, parser.getStreamOutput());
-                plan.generate();
-                String hdfsFilePath = Utility.uploadHdfsFile(plan.getJson());
+                //TODO:
+                //String[] inputs = this.parser.getStreamInput().replaceAll(" ", "").split(",");
+                this.plan.set(this.parser.getStreamInput(), parser.getStreamOutput());
+                this.plan.generate();
+                String hdfsFilePath = util.uploadHdfsFile(this.plan.getJson());
                 sql = "Insert into " +
                        Conf.SYS_DB + ".streamjobmgr(name, pid, jobid, status, define, filepath) values ('" +
                        this.parser.getStreamJobName() + "',NULL,NULL,'STOPPED','input:" + parser.getStreamInput()
                         + ";ouput:" + parser.getStreamOutput() + "','" + hdfsFilePath + "')";
-                Utility.Logger("SQL:" + sql);
+                util.Logger("SQL:" + sql);
                 break;
             }
             case SHOW_STREAMJOBS: {
-                Utility.updateStreamJobStatus();
+                util.updateStreamJobStatus();
                 sql = "Select name, jobid, status, define from " + Conf.SYS_DB + ".streamjobmgr";
                 break;
             }
@@ -41,7 +44,7 @@ public class StreamQLBuilder {
                 break;
             }
             case STOP_STREAMJOB: {
-                Utility.updateStreamJobStatus();
+                util.updateStreamJobStatus();
                 sql = "Update " +
                         Conf.SYS_DB +".streamjobmgr set status = '" + STATUS.STOPPED.toString() +
                        "' , pid = \"NULL\", jobid = \"NULL\" where  name = \"" + this.parser.getStreamJobName() + "\"";
